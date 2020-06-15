@@ -1,36 +1,24 @@
-#wr_ls_udp
-####################
-#### HOW TO RUN ####
-# 1: build:
-	catkin_make
-# 2: install:
-	catkin_make install
-# 3.1: run with node:
-	roslaunch wr_ls1207de_udp_with_1_lidar.launch（or wr_ls1207de_udp_with_2_lidars.launch） 
-# 3.2: run with nodelet:
-	roslaunch wr_ls_udp wr_ls1207de_udp_nodelet_with_1_lidar.launch (or wr_ls1207de_udp_nodelet_with_1_lidar.launch)
-#       NOTE:wr_laser_manager nodelet will be launch by default, you can specify 
-#	     the nodelet manager what you want by setting arguments "bringup_self_manager" and
-#	     "manager_name" in the launch file.
+### How to drive the wr_lidar with ROS
 
-####################
-#### HOW TO VIEW FROM RVIZ ###
-# 1: Run the package as introduced .
-# 2: Start another terminal.
-# 3: run rviz:
-	rosrun rviz rviz
-# 4: In the popup window, click [Add] on the left-bottum
-# 5: In the popup window, select  [By topic] tab.
-# 6: Select [LaserScan], then [OK]
-# 7: Back to the main window, in the left operation panel:
-     [Displays]->[Global Options]->[Fixed Frame]->Change the value of this item to [laser]
-# 8: Then, you should be able to see the result in display window.
+After you installed the **ROS** environment, follow the following steps, you can drive the wr_2d_lidar.
 
-#################### 
-#### HOW TO DISABLE DEBUG MODE ####
-# 1: In cfg/WrLs.cfg
-# 2: Set the default value of debug_mode to False
+**1st.** You need to configure your local static network ip address to make sure your device and the wr_lidar are in the same network segment. (The lidar's default ip is `192.168.0.10`)
 
-# HOW TO DISABLE CHECK FRAME MODE
-# 1: In launch/wr_ls1207de_udp.launch or launch/wr_ls1207de_udp_nodelet.launch
-# 2: Set the checkframe = false in xml 
+**2nd.** After you configure your static ip address, you need to build the ros working space and source the env,    with following commands.
+
+> cd Your_src_directory
+>
+> `catkin_make`
+>
+> `source devel/setup.bash`
+
+**3rd**. Drive the wr_lidar with ros
+
+> 	roslaunch wr_ls1207de_udp_with_1_lidar.launch（or wr_ls1207de_udp_with_2_lidars.launch） 
+
+**4th.**  open another terminal 
+
+> Source your ros-env
+>
+> `rviz`
+
