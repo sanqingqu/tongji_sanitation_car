@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<robot xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+  xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+  xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+  xmlns:xacro="http://ros.org/wiki/xacro"
+  name="wr_ls_udp">
+
+  <xacro:include filename="$(find wr_ls_udp)/urdf/wr_ls_udp.urdf.xacro" />
+
+  <xacro:wr_ls1207de name="laser" ros_topic="wr_scan" />
+</robot>

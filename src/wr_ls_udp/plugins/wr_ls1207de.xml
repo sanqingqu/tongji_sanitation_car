@@ -1,0 +1,3 @@
+<library path="lib/libwr_ls1207de_nodelet">
+  	<class name="wr_ls_udp/WrLs1207DENodelet" type="wr_ls_udp::WrLs1207DENodelet" base_class_type="nodelet::Nodelet"/>
+</library>

@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<launch>
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find wr_ls_udp)/urdf/wr_ls1207de.urdf.xacro'" />
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+
+  <node name="wr_ls1207de" pkg="wr_ls_udp" type="wr_ls1207de" respawn="true" output="screen">
+    <!--
+      <param name="min_ang" type="double" value="-2.35619449019" />
+      <param name="max_ang" type="double" value="2.35619449019" />
+      <param name="intensity" type="bool" value="True" />
+      <param name="skip" type="int" value="0" />
+      <param name="frame_id" type="str" value="laser" />
+      <param name="time_offset" type="double" value="-0.001" />
+      <param name="publish_datagram" type="bool" value="False" />
+      <param name="subscribe_datagram" type="bool" value="false" />
+      <param name="device_number" type="int" value="0" />
+      <param name="time_increment" type="double" value="0.000061722" />
+      <param name="range_min" type="double" value="0.05" />
+      <param name="range_max" type="double" value="10.0" />
+    -->
+      <remap from="scan" to="wr_scan" />
+      <param name="frame_id" type="str" value="laser" />
+      <param name="range_min" type="double" value="0.01" />
+      <param name="range_max" type="double" value="30.0" />
+      <param name="hostname" type="string" value="192.168.0.10" />
+      <param name="port" type="string" value="2112" />
+      <param name="timelimit" type="int" value="5" />
+      <param name="checkframe" type="bool" value="true" />
+  </node>
+</launch>
