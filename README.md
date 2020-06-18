@@ -10,6 +10,8 @@ This repo is used to maintain the *tongji sanitation-car* project's visual perce
 
 #### Use Cameras
 
+it envolves changing the permission of accessing the cameras, see http://wiki.ros.org/libuvc_camera for details.
+
 read fisheye camera image:
 ```bash
 rosrun libuvc_camera camera_node _width:=1920 _height:=1080 _frame_rate:=30 _video_mode:=mjpeg # should not change the args
