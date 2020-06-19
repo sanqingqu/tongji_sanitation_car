@@ -123,15 +123,19 @@ void CameraDriver::ReconfigureCallback(UVCCameraConfig &new_config, uint32_t lev
       }                                                                 \
     }
 
-    PARAM_INT(scanning_mode, scanning_mode, new_config.scanning_mode);
+    //PARAM_INT(scanning_mode, scanning_mode, new_config.scanning_mode);
+    new_config.auto_exposure = 1;
     PARAM_INT(auto_exposure, ae_mode, 1 << new_config.auto_exposure);
+    fprintf(stderr, "auto_exposure = %d\n", new_config.auto_exposure);
     PARAM_INT(auto_exposure_priority, ae_priority, new_config.auto_exposure_priority);
+    //fprintf(stderr, "auto_exposure_priority = %d\n", new_config.auto_exposure_priority);
     PARAM_INT(exposure_absolute, exposure_abs, new_config.exposure_absolute * 10000);
-    PARAM_INT(auto_focus, focus_auto, new_config.auto_focus ? 1 : 0);
-    PARAM_INT(focus_absolute, focus_abs, new_config.focus_absolute);
+    fprintf(stderr, "exposure_absolute = %f\n", new_config.exposure_absolute);
+    //PARAM_INT(auto_focus, focus_auto, new_config.auto_focus ? 1 : 0);
+    //PARAM_INT(focus_absolute, focus_abs, new_config.focus_absolute);
 #if libuvc_VERSION     > 00005 /* version > 0.0.5 */
     PARAM_INT(gain, gain, new_config.gain);
-    PARAM_INT(iris_absolute, iris_abs, new_config.iris_absolute);
+    //PARAM_INT(iris_absolute, iris_abs, new_config.iris_absolute);
     PARAM_INT(brightness, brightness, new_config.brightness);
 #endif
     

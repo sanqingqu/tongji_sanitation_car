@@ -186,3 +186,4 @@ src/CMakeLists.txt
 *.exe
 *.out
 *.app
+*.swp

@@ -178,7 +178,8 @@ def callback(rgb_msg):
       undist_frame = cv2.remap(raw_frame, calib.map1, calib.map2, cv2.INTER_LINEAR);
       cv2.imshow("undist_frame", undist_frame)
 
-  cv2.imshow("raw_frame", raw_frame)
+  resized_frame = cv2.resize(raw_frame, (0,0), fx=0.3, fy=0.3)
+  cv2.imshow("raw_frame", resized_frame)
   key = cv2.waitKey(1)
 
 if __name__ == '__main__':
