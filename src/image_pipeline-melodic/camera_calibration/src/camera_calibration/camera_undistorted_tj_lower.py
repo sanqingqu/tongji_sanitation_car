@@ -50,9 +50,16 @@ from sensor_msgs.msg import CameraInfo, Image
 
 import numpy as np
 from easydict import EasyDict
+# 1920x1080
+#camera_mat = np.array([[367.2867502156721, 0.0, 960.8303932411943], [0.0, 369.06857590098275, 562.6211777029157], [0.0, 0.0, 1.0]])
+#dist_coeff = np.array([[0.05820771148994614], [0.011886625709185384], [-0.024279444196835236], [0.006027933828260825]])
 
-camera_mat = np.array([[367.05727568940665, 0.0, 986.3041728730632], [0.0, 367.45918081228507, 582.4925969607051], [0.0, 0.0, 1.0]])
-dist_coeff = np.array([[0.05371535283712051], [-0.003498342575872793], [0.019685358371030606], [-0.019748809896506538]])
+# 3264x2448
+camera_mat = np.array([[367.0543074903704, 0.0, 990.6330750325744], [0.0, 366.7370079611347, 575.1183044201284], [0.0, 0.0, 1.0]])
+dist_coeff = np.array([[0.06062150734934245], [-0.008279891153400248], [-0.0012545281813805395], [-0.0010038515782001421]])
+
+
+
 frame_shape = None
 map1 = None
 map2 = None
@@ -74,10 +81,34 @@ def callback(rgb_msg):
   resized_frame = cv2.resize(undist_frame, (0, 0), fx=0.4, fy=0.4)
   cv2.imshow("undist_frame", resized_frame)
   key = cv2.waitKey(1)
-
-if __name__ == '__main__':
+ 
+def ros_main():
   rospy.init_node('undistort_tj', anonymous=True)
   image_sub = message_filters.Subscriber('/image_raw', Image)
   ts = message_filters.ApproximateTimeSynchronizer([image_sub], 30, 0.05)
   ts.registerCallback(callback)
   rospy.spin()
+
+def cv_main():
+  cap = cv2.VideoCapture(0)
+  assert cap.isOpened(), "capture open failed"
+  (cap.set(cv2.CAP_PROP_FPS, 20))
+  (cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920))
+  (cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080))
+  (cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M','J','P','G')))
+  (cap.set(cv2.CAP_PROP_GAIN, 0.4))
+  (cap.set(cv2.CAP_PROP_BRIGHTNESS, 0))
+  (cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25))
+  (cap.set(cv2.CAP_PROP_EXPOSURE, 0.5))
+  while True:
+    ok, raw_frame = cap.read()
+    #print(raw_frame.shape)
+    undist_frame = undistort(raw_frame)
+    resized_frame = cv2.resize(undist_frame, (0, 0), fx=0.4, fy=0.4)
+    cv2.imshow("undist_frame", resized_frame)
+    key = cv2.waitKey(1)
+    if key in [27, 'q']:
+        break
+
+if __name__ == '__main__':
+  cv_main()

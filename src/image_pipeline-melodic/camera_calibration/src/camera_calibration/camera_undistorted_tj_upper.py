@@ -101,7 +101,7 @@ def cv_main():
   (cap.set(cv2.CAP_PROP_EXPOSURE, 0.05))
   while True:
     ok, raw_frame = cap.read()
-    print(raw_frame.shape)
+    #print(raw_frame.shape)
     undist_frame = undistort(raw_frame)
     resized_frame = cv2.resize(undist_frame, (0, 0), fx=0.4, fy=0.4)
     cv2.imshow("undist_frame", resized_frame)
