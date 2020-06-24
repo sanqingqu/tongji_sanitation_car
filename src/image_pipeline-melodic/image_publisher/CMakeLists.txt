@@ -22,12 +22,12 @@ install(TARGETS image_publisher
 )
 
 add_executable(image_publisher_exe src/node/image_publisher.cpp)
-SET_TARGET_PROPERTIES(image_publisher_exe PROPERTIES OUTPUT_NAME image_publisher)
-target_link_libraries(image_publisher_exe ${catkin_LIBRARIES})
+SET_TARGET_PROPERTIES(image_publisher1_exe PROPERTIES OUTPUT_NAME image_publisher1)
+target_link_libraries(image_publisher1_exe ${catkin_LIBRARIES})
 
 add_executable(image_publisher_exe src/node/image_publisher1.cpp)
-SET_TARGET_PROPERTIES(image_publisher_exe PROPERTIES OUTPUT_NAME image_publisher)
-target_link_libraries(image_publisher_exe ${catkin_LIBRARIES})
+SET_TARGET_PROPERTIES(image_publisher2_exe PROPERTIES OUTPUT_NAME image_publisher2)
+target_link_libraries(image_publisher2_exe ${catkin_LIBRARIES})
 
 add_executable(image_publisher_exe src/node/image_publisher2.cpp)
 SET_TARGET_PROPERTIES(image_publisher_exe PROPERTIES OUTPUT_NAME image_publisher)
