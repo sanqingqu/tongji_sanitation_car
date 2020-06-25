@@ -113,7 +113,6 @@ def callback(data):
 
 def read():
     rospy.init_node('transform', anonymous=True)
-    rospy.loginfo(rospy.get_caller_id())
     rospy.Subscriber('/os_cloud_node/points', PointCloud2, callback)
     rospy.spin()
 
