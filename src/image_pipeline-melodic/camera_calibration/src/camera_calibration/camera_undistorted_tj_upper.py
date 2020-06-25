@@ -59,6 +59,17 @@ from easydict import EasyDict
 camera_mat = np.array([[613.7186360965562, 0.0, 1614.0450603510321], [0.0, 616.7516654519629, 1256.4036912053894], [0.0, 0.0, 1.0]])
 dist_coeff = np.array([[0.056647568760584514], [0.020531679323314195], [-0.029998310675196704], [0.008229496587195233]])
 
+cap = cv2.VideoCapture(1)
+assert cap.isOpened(), "capture open failed"
+(cap.set(cv2.CAP_PROP_FPS, 20))
+(cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920))
+(cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080))
+(cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M','J','P','G')))
+(cap.set(cv2.CAP_PROP_GAIN, 0.4))
+(cap.set(cv2.CAP_PROP_BRIGHTNESS, 0))
+(cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25))
+(cap.set(cv2.CAP_PROP_EXPOSURE, 0.5))
+
 frame_shape = None
 map1 = None
 map2 = None
@@ -75,8 +86,13 @@ def undistort(frame):
 
 def callback(rgb_msg):
   global calib
+  bridge = CvBridge()
+  img_pub = rospy.Publisher('undistorted_2', Image, queue_size=1)
+  
   raw_frame = CvBridge().imgmsg_to_cv2(rgb_msg, desired_encoding="bgr8")
   undist_frame = undistort(raw_frame)
+  img_pub.publish(bridge.cv2_to_imgmsg(undist_frame,"bgr8"))
+  
   resized_frame = cv2.resize(undist_frame, (0, 0), fx=0.4, fy=0.4)
   cv2.imshow("undist_frame", resized_frame)
   key = cv2.waitKey(1)
@@ -110,4 +126,4 @@ def cv_main():
         break
 
 if __name__ == '__main__':
-    cv_main()
+  ros_main()
