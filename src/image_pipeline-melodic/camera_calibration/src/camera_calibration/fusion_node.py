@@ -14,21 +14,21 @@ import roslib
 import rospy
 
 # Ros Messages
-from sensor_msgs.msg import CompressedImage, Image
+from sensor_msgs.msg import CompressedImage
 # We do not use cv_bridge it does not support CompressedImage in python
 # from cv_bridge import CvBridge, CvBridgeError
 
-class ExCalibrator:
+class FusionNode:
 
     def __init__(self):
         '''Initialize ros publisher, ros subscriber'''
 
         # subscribed Topic
         self.subscriber = rospy.Subscriber("/undistort_lower/compressed",
-            CompressedImage, self.callback,  queue_size = 1)
+            CompressedImage, self.callback_image,  queue_size = 1)
 
 
-    def callback(self, ros_data):
+    def callback_image(self, ros_data):
 
         #### direct conversion to CV2 ####
         np_arr = np.fromstring(ros_data.data, np.uint8)
@@ -41,8 +41,8 @@ class ExCalibrator:
 
 def main(args):
     '''Initializes and cleanup ros node'''
-    ic = ExCalibrator()
-    rospy.init_node('extrinsic_calibrator', anonymous=True)
+    ic = FusionNode()
+    rospy.init_node('fusion_node', anonymous=True)
     try:
         rospy.spin()
     except KeyboardInterrupt:
