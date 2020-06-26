@@ -188,3 +188,4 @@ src/CMakeLists.txt
 *.app
 *.swp
 *.tgz
+*.bag
