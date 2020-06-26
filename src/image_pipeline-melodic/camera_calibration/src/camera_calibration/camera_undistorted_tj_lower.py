@@ -1,36 +1,6 @@
 #!/usr/bin/python
-#
-# Software License Agreement (BSD License)
-#
-# Copyright (c) 2009, Willow Garage, Inc.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above
-#    copyright notice, this list of conditions and the following
-#    disclaimer in the documentation and/or other materials provided
-#    with the distribution.
-#  * Neither the name of the Willow Garage nor the names of its
-#    contributors may be used to endorse or promote products derived
-#    from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
+
+# http://wiki.ros.org/rospy_tutorials/Tutorials/WritingImagePublisherSubscriber
 
 from __future__ import print_function
 import cv2
@@ -46,7 +16,7 @@ import cv2
 import rospy
 from cv_bridge import CvBridge
  
-from sensor_msgs.msg import CameraInfo, Image
+from sensor_msgs.msg import CameraInfo, Image, CompressedImage
 
 import numpy as np
 from easydict import EasyDict
@@ -82,29 +52,46 @@ def undistort(frame):
             camera_mat, dist_coeff, np.eye(3, 3), camera_mat, frame_shape, cv2.CV_16SC2)
     undist_frame = cv2.remap(frame, map1, map2, cv2.INTER_LINEAR);
     return undist_frame
-
-def callback(rgb_msg):
-  global calib
-  bridge = CvBridge()
-  img_pub = rospy.Publisher('undistorted_1', Image, queue_size=1)
-  
-  raw_frame = CvBridge().imgmsg_to_cv2(rgb_msg, desired_encoding="bgr8")
-  undist_frame = undistort(raw_frame)
-  img_pub.publish(bridge.cv2_to_imgmsg(undist_frame,"bgr8"))
-  
-  resized_frame = cv2.resize(undist_frame, (0, 0), fx=0.4, fy=0.4)
-  cv2.imshow("undist_frame", resized_frame)
-  key = cv2.waitKey(1)
  
-def ros_main():
-  rospy.init_node('undistort_tj', anonymous=True)
-  image_sub = message_filters.Subscriber('/image_raw', Image)
-  ts = message_filters.ApproximateTimeSynchronizer([image_sub], 30, 0.05)
-  ts.registerCallback(callback)
-  rospy.spin()
+def ros_main(raw=False, compressed=False, resized=True, viz=False):
+  img_pub_raw = rospy.Publisher('/undistort_lower', Image, queue_size = 2)
+  img_pub_compressed = rospy.Publisher('/undistort_lower/compressed', CompressedImage, queue_size = 2)
+  img_pub_resized = rospy.Publisher('/undistort_lower_resized', Image, queue_size = 2)
+  rospy.init_node('undistort_lower', anonymous=True)
+  rate = rospy.Rate(20)
+  while not rospy.is_shutdown():
+    ok, raw_frame = cap.read()
+    timestamp = rospy.Time.now()
+    undist_frame = undistort(raw_frame)
+
+    # raw
+    bridge = CvBridge()
+    if raw:
+      img_pub_raw.publish(bridge.cv2_to_imgmsg(undist_frame,"bgr8"))
+
+    # compressed
+    if compressed:
+      cmsg = CompressedImage()
+      cmsg.header.stamp = timestamp
+      cmsg.format = "jpeg"
+      cmsg.data = np.array(cv2.imencode('.jpg', undist_frame)[1]).tostring()
+      img_pub_compressed.publish(cmsg)
+
+    resized_frame = None
+    if resized:
+      resized_frame = cv2.resize(undist_frame, (0, 0), fx=0.4, fy=0.4)
+      img_pub_resized.publish(bridge.cv2_to_imgmsg(resized_frame,"bgr8"))
+    
+    if viz:
+      if resized_frame is None:
+        resized_frame = cv2.resize(undist_frame, (0, 0), fx=0.4, fy=0.4)
+      cv2.imshow("undist_frame", raw_frame)
+      key = cv2.waitKey(1)
+
+    rate.sleep()
 
 def cv_main():
-  cap = cv2.VideoCapture(0)
+  #cap = cv2.VideoCapture(0)
   assert cap.isOpened(), "capture open failed"
   (cap.set(cv2.CAP_PROP_FPS, 20))
   (cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920))
@@ -125,4 +112,8 @@ def cv_main():
         break
 
 if __name__ == '__main__':
-  ros_main()
+  #cv_main()
+  try:
+    ros_main()
+  except rospy.ROSInterruptException:
+    pass

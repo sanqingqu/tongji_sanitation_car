@@ -187,3 +187,4 @@ src/CMakeLists.txt
 *.out
 *.app
 *.swp
+*.tgz

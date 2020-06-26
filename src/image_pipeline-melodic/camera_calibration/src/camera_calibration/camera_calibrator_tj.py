@@ -182,6 +182,27 @@ def callback(rgb_msg):
   cv2.imshow("raw_frame", resized_frame)
   key = cv2.waitKey(1)
 
+def cv_main():
+  cap = cv2.VideoCapture(0)
+  assert cap.isOpened(), "capture open failed"
+  (cap.set(cv2.CAP_PROP_FPS, 20))
+  (cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920))
+  (cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080))
+  (cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M','J','P','G')))
+  (cap.set(cv2.CAP_PROP_GAIN, 0.4))
+  (cap.set(cv2.CAP_PROP_BRIGHTNESS, 0))
+  (cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25))
+  (cap.set(cv2.CAP_PROP_EXPOSURE, 0.5))
+  while True:
+    ok, raw_frame = cap.read()
+    #print(raw_frame.shape)
+    undist_frame = undistort(raw_frame)
+    resized_frame = cv2.resize(undist_frame, (0, 0), fx=0.4, fy=0.4)
+    cv2.imshow("undist_frame", resized_frame)
+    key = cv2.waitKey(1)
+    if key in [27, 'q']:
+        break
+        
 if __name__ == '__main__':
   rospy.init_node('calibrator_tj', anonymous=True)
   image_sub = message_filters.Subscriber('/image_raw', Image)
