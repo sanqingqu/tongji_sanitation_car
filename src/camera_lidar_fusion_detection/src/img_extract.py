@@ -41,7 +41,7 @@ def main():
     except KeyboardInterrupt:
         print "Shutting down ROS image extraction module."
     
-    cv.destroyAllWindows()
+    cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     main()
