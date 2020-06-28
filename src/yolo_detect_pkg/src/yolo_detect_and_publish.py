@@ -36,6 +36,10 @@ class YOLODetect(object):
 
     def pulish_detect_bbox(self):
         if self.yolo_func is not None:
+            # the yolo_func output results must be np 1D array, and dtype=np.int32
+            # the detection result is **bbox_np** defined as:
+            #  [x_left_corner, y_left_corner, x_right_bottom, y_right_bottom] * n
+            # the bbox_np must be resize the (n*4, ) shape like the below
             self.bbox_np = self.yolo_func(self.input_img)
         else:
             self.bbox_np = np.array([393, 113, 584, 471],dtype=np.int32)
