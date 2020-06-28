@@ -33,9 +33,8 @@ class LaserExtraction(object):
         print(scan_np)
 
 def main():
-    rospy.init_node("laser_extraction_node", anonymous=True)
     laser_ext = LaserExtraction()
-    
+    rospy.init_node("laser_extraction", anonymous=True)
     print "init the laser_scan msg extraction node"
     try:
         rospy.spin()

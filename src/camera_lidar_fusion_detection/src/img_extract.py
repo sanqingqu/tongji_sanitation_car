@@ -27,7 +27,7 @@ class ImageExtraction(object):
 
 def main():
     img_ext = ImageExtraction()
-    rospy.init_node("image_extraction_node", anonymous=True)
+    rospy.init_node("image_extraction", anonymous=True)
     print "init the image extraction node"
     try:
         rospy.spin()

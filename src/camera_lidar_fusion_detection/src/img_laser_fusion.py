@@ -122,8 +122,6 @@ class ImgLaserFusion(object):
 
 def main(opts):
 
-    rospy.init_node("img_laser_fusion_node", anonymous=True)
-
     lower_camera_mat = np.array([[367.0543074903704 * 0.5, 0.0, 990.6330750325744 * 0.5], 
                              [0.0, 366.7370079611347 * 0.5, 575.1183044201284 * 0.5],
                              [0.0, 0.0, 1.0]])
@@ -134,6 +132,9 @@ def main(opts):
                     img_topic=opts.sub_img_topic, laser_topic=opts.sub_lidar_topic,
                     fusion_pub_topic=opts.pub_fusion_topic,
                     debug=opts.debug_mode)
+
+    rospy.init_node("image_extraction", anonymous=True)
+
     try:
         rospy.spin()
     except KeyboardInterrupt:
