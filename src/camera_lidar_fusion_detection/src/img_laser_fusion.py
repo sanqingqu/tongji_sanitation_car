@@ -84,6 +84,9 @@ class ImgLaserFusion(object):
                 input_points = np.concatenate((self.input_scan_np, zeros, ones), axis=1)
                 transformed_points = np.dot(self.lidar_to_camera_extrincic_param, input_points.T).T
                 # normalize all points
+                # filter out the camera's back points
+                geometric_filter_flag = transformed_points[:, 2] > 0
+
                 transformed_points[:, 0] /= transformed_points[:, 2]
                 transformed_points[:, 1] /= transformed_points[:, 2]
                 transformed_points[:, 2] = 1
@@ -93,6 +96,7 @@ class ImgLaserFusion(object):
                 filter_flag_1 = np.logical_and(0 < self.scan_to_pixels[:, 0], self.scan_to_pixels[:, 0] < 800)
                 filter_flag_2 = np.logical_and(0 < self.scan_to_pixels[:, 1], self.scan_to_pixels[:, 1] < 450)
                 filter_flag = np.logical_and(filter_flag_1, filter_flag_2)
+                filter_flag = np.logical_and(geometric_filter_flag, filter_flag)
                 plot_pixels = self.scan_to_pixels[filter_flag, :]
 
                 self.fusion_img = copy.copy(self.input_img)
