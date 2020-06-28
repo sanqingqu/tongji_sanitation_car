@@ -18,7 +18,7 @@ run the wr_lidar:
 roslaunch wr_ls1207de_udp_with_1_lidar.launch
 ```
 
-#### Use Camerasb
+#### Use Camera
 
 it evolves changing the permission of accessing the cameras, see http://wiki.ros.org/libuvc_camera for details.
 
