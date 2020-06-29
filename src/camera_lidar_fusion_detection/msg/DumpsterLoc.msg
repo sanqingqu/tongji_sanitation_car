@@ -1,0 +1,4 @@
+float32 x_left_loc
+float32 y_left_loc
+float32 x_right_loc
+float32 y_right_loc
