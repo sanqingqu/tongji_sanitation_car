@@ -52,6 +52,8 @@ add_message_files(
   FILES
   Ints.msg
   Floats.msg
+  BBox.msg
+  BBoxArray.msg
 )
 
 ## Generate services in the 'srv' folder
