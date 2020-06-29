@@ -132,12 +132,12 @@ def main(opts):
 
     lidar_to_lower_camera = np.array([[0, -1, 0, 0],[0, 0, -1, -0.1], [1, 0, 0, -0.025]])
     
+    rospy.init_node("image_extraction", anonymous=True)
+
     img_fusion = ImgLaserFusion(lower_camera_mat, lidar_to_lower_camera,
                     img_topic=opts.sub_img_topic, laser_topic=opts.sub_lidar_topic,
                     fusion_pub_topic=opts.pub_fusion_topic,
                     debug=opts.debug_mode)
-
-    rospy.init_node("image_extraction", anonymous=True)
 
     try:
         rospy.spin()
