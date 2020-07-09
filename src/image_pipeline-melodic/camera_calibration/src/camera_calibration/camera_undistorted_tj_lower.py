@@ -29,7 +29,7 @@ camera_mat = np.array([[367.0543074903704, 0.0, 990.6330750325744], [0.0, 366.73
 dist_coeff = np.array([[0.06062150734934245], [-0.008279891153400248], [-0.0012545281813805395], [-0.0010038515782001421]])
 new_camera_mat = np.array([[367.0543074903704 * 0.5, 0.0, 990.6330750325744 * 0.5], [0.0, 366.7370079611347 * 0.5, 575.1183044201284 * 0.5], [0.0, 0.0, 1.0]])
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(int(sys.argv[1]) if len(sys.argv) > 1 else 0)
 assert cap.isOpened(), "capture open failed"
 (cap.set(cv2.CAP_PROP_FPS, 20))
 (cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920))
@@ -80,13 +80,14 @@ def ros_main(raw=False, compressed=False, resized=True, viz=False):
 
     resized_frame = None
     if resized:
-      resized_frame = cv2.resize(undist_frame, (0, 0), fx=0.4, fy=0.4)
+      resized_frame = cv2.resize(raw_frame, (0, 0), fx=0.5, fy=0.5)
       img_pub_resized.publish(bridge.cv2_to_imgmsg(resized_frame,"bgr8"))
     
     if viz:
       #if resized_frame is None:
       #  resized_frame = cv2.resize(undist_frame, (0, 0), fx=0.4, fy=0.4)
       cv2.imshow("undist_frame", undist_frame)
+      cv2.imshow("resized", resized_frame)
       key = cv2.waitKey(1)
 
     rate.sleep()
@@ -116,6 +117,6 @@ def cv_main():
 if __name__ == '__main__':
   #cv_main()
   try:
-    ros_main(raw=False, compressed=True, resized=False, viz=True)
+    ros_main(raw=False, compressed=True, resized=True, viz=True)
   except rospy.ROSInterruptException:
     pass
