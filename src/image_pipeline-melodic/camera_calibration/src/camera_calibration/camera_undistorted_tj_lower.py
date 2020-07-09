@@ -14,6 +14,7 @@ import time
 import message_filters
 import cv2
 import rospy
+import sys
 from cv_bridge import CvBridge
  
 from sensor_msgs.msg import CameraInfo, Image, CompressedImage

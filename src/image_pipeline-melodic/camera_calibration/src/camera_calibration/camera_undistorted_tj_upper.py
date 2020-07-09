@@ -21,6 +21,7 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import CameraInfo, Image, CompressedImage
 
 import numpy as np
+import sys
 from easydict import EasyDict
 
 # 1920x1080
