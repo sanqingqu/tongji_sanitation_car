@@ -41,9 +41,11 @@ class ImgLaserFusion(object):
         self.fusion_publisher = rospy.Publisher(fusion_pub_topic, CompressedImage, queue_size=2)
         
         self.input_scan_np = None
+        self.input_scan_np_last = None
         self.input_img = None
         self.scan_to_pixels = None
         self.fusion_img = None
+        self.fusioning_flag = False
 
     def img_extraction_callback(self, compressed_img_msg):
         # ----------------------------------------------------------------------------
@@ -71,17 +73,29 @@ class ImgLaserFusion(object):
         scan_x = (scan_ranges * np.cos(scan_rads)).reshape(-1, 1)
         scan_y = (scan_ranges * np.sin(scan_rads)).reshape(-1, 1)
 
+        # if not self.fusioning_flag:
+        #     # Sometimes, the fusion process will be disturbed by the input laser_scan
+        #     # In this case, the input_scan_np will be ignored.
+        #     print("WARNNING!")
+        #     self.input_scan_np = np.concatenate((scan_x, scan_y), axis=1)
+        # else:
+        #     pass
+
         self.input_scan_np = np.concatenate((scan_x, scan_y), axis=1)
+        
+
 
     def fusion(self):
 
-        if self.input_scan_np is not None and self.input_img is not None:
+        self.fusioning_flag = True
+        self.input_scan_np_last = self.input_scan_np
+        if self.input_scan_np_last is not None and self.input_img is not None:
             # if len(self.input_scan_np) < 10:
             #     return
-            zeros = np.zeros((len(self.input_scan_np), 1))
-            ones = np.ones((len(self.input_scan_np), 1))
+            zeros = np.zeros((len(self.input_scan_np_last), 1))
+            ones = np.ones((len(self.input_scan_np_last), 1))
             try:
-                input_points = np.concatenate((self.input_scan_np, zeros, ones), axis=1)
+                input_points = np.concatenate((self.input_scan_np_last, zeros, ones), axis=1)
                 transformed_points = np.dot(self.lidar_to_camera_extrincic_param, input_points.T).T
                 # normalize all points
                 # filter out the camera's back points
@@ -108,9 +122,11 @@ class ImgLaserFusion(object):
                     # cv2.waitKey(2)
 
             except ValueError:
-                print self.input_scan_np.shape
+                print self.input_scan_np_last.shape
                 print zeros.shape
                 print ones.shape
+
+        self.fusioning_flag = False
 
     def publish_fusion_img(self):
         # get the fusion img
