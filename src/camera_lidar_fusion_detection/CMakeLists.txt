@@ -52,6 +52,7 @@ add_message_files(
   FILES
   DumpsterLoc.msg
   DumpsterLocArray.msg
+  DumpsterCAN.msg
 )
 
 ## Generate services in the 'srv' folder
