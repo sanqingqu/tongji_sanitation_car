@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as f
+import numpy as np
 
 from models import Darknet
 from utils import non_max_suppression, rescale_boxes
@@ -9,7 +10,9 @@ class Detector(object):
     def __init__(self, device, model_def, load_path, reg_threshold, cls_threshold, nms_threshold, image_size):
         self.image_size = image_size
         self.model = Darknet(model_def, img_size=self.image_size).to(device)
-        self.model.load_state_dict(torch.load(load_path))
+        # TODO 
+        # change device to GPU
+        self.model.load_state_dict(torch.load(load_path,map_location='cpu'))
         self.model.eval()
         self.reg_threshold = reg_threshold
         self.cls_threshold = cls_threshold
@@ -34,6 +37,8 @@ class Detector(object):
         if detection is not None:
             detection = detection[detection[:, -2] > self.cls_threshold]
             detection = rescale_boxes(detection, self.image_size, original_size)
+        else:
+            print("detection result is None")
         return detection
 
 
