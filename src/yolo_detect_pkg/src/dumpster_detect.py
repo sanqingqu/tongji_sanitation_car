@@ -10,17 +10,13 @@ class ImageDumpsterDetector:
     def __call__(self, input_img_cur):
         filter = [1, 2]
         # detection result
-        print(type(input_img_cur))
+        # print(type(input_img_cur))
         detection = self.yolo(input_img_cur)
         bbox_list = []
         if detection is None: return bbox_list
         for x1, y1, x2, y2, conf, cls_conf, cls_pred in detection:
             #if int(cls_pred) in filter:
             bbox = []
-            bbox.append(x1)
-            bbox.append(y1)
-            bbox.append(x2)
-            bbox.append(y2)
-            bbox = np.array(bbox, dtype=np.int32)
+            bbox = np.array([x1, y1, x2, y2], dtype=np.int32)
             bbox_list.append(bbox)
         return bbox_list

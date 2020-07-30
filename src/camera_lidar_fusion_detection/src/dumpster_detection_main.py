@@ -52,6 +52,7 @@ class DumpsterDetection(object):
 
         self.input_img_pre = None 
         self.input_img_cur = None 
+        self.input_img_to_yolo = None 
         self.input_img_dtime = 0
         self.input_img_time_tick = rospy.get_time()
         self.input_scan_np = None 
@@ -127,7 +128,12 @@ class DumpsterDetection(object):
         # to address the input_laser_scan msg flush the msg
         # we use the input_scan to maintain the input_laser_scan points, 
         # only when we need to involke the detection function, we update the input_scan_np
-        self.input_scan_np = self.input_scan_np_cur
+        
+        """In order to synchronize the input image and input scan points,
+           the self.input_scan_np is updated by the img_dumpster_detection function. 
+           and nor be maintained in this function.
+        """
+        # self.input_scan_np = self.input_scan_np_cur
 
         if self.input_scan_np is not None:
             zeros = np.zeros((len(self.input_scan_np), 1))
@@ -155,7 +161,11 @@ class DumpsterDetection(object):
             if self.input_img_cur is None:
                 print("[WARNING] no image received!")
                 return
-            self.img_detected_bboxes_list = self.img_dumpster_detect_func(self.input_img_cur)
+
+            self.input_img_to_yolo = self.input_img_cur
+            self.input_scan_np = self.input_scan_np_cur
+            
+            self.img_detected_bboxes_list = self.img_dumpster_detect_func(self.input_img_to_yolo)
             print("[INFO]", sys._getframe().f_lineno, self.img_detected_bboxes_list)
         else:
             self.img_detected_bboxes_list = [np.array([393, 113, 584, 471],dtype=np.int32),
@@ -412,7 +422,7 @@ class DumpsterDetection(object):
             #if self.debug_mode:
             if True:
                 detected_keypoints_list_np = np.array(detected_keypoints_list).reshape(-1, 2)
-                self.visualize_detection_result(detected_keypoints_list_np, self.input_scan_np[self.geometric_filter_flag,:], self.input_img_cur)
+                self.visualize_detection_result(detected_keypoints_list_np, self.input_scan_np[self.geometric_filter_flag,:], self.input_img_to_yolo)
 
             if len(detected_dumpster_loc_list) > 1:
 
@@ -545,4 +555,3 @@ if __name__ == "__main__":
     input_opts = opts.parse_args()
    
     main(input_opts)
-
