@@ -527,8 +527,11 @@ def main(opts):
     lower_camera_mat = np.array([[367.0543074903704 * 0.5, 0.0, 990.6330750325744 * 0.5], 
                             [0.0, 366.7370079611347 * 0.5, 575.1183044201284 * 0.5],
                             [0.0, 0.0, 1.0]])
-
-    lidar_to_lower_camera =  np.array([[0, -1, 0, 0],[0, 0, -1, -0.1], [1, 0, 0, -0.025]])
+    # lidar_to_lower_camera =  np.array([[0, -1, 0, 0],[0, 0, -1, -0.1], [1, 0, 0, -0.025]])
+    # angle more 5
+    lidar_to_lower_camera =  np.array([[-8.71557427e-02, -9.96194698e-01, -6.63360825e-17, 0],
+                                        [6.12323400e-17,  6.12323400e-17, -1.00000000e+00, -0.1],
+                                        [9.96194698e-01, -8.71557427e-02, 5.56625823e-17, -0.025]])
     # init detector
     dumpster_detector = DumpsterDetection(lower_camera_mat, lidar_to_lower_camera,
                                         img_sub_topic=opts.img_sub_topic,
