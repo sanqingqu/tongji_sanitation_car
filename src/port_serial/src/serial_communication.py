@@ -3,10 +3,12 @@
 import rospy
 import serial
 import serial.tools.list_ports
-from port_serial.msg import DumpsterCAN
+from camera_lidar_fusion_detection.msg import DumpsterCAN
+from camera_lidar_fusion_detection.msg import DumpsterInfo
 from std_msgs.msg import String
 import time
 import threading
+import numpy as np
 
 port_list = list(serial.tools.list_ports.comports())
 #Select the serial port as required
@@ -26,12 +28,22 @@ def thread_job():
     rospy.spin()
 
 def callback(data):
-    ser.write(data.byte_string)
+    byte_0 = np.uint8(data.continuous_dumpster).tobytes()
+    byte_1 = np.uint8(data.lateral_dis).tobytes()
+    byte_23 = np.float16(data.side_offset).tobytes()
+    byte_45 = np.float16(data.object_width).tobytes()
+    byte_6 = np.uint8(data.left_gap).tobytes()
+    byte_7 = np.uint8(data.right_gap).tobytes()
+    byte_list = [byte_0, byte_1, byte_23[0], byte_23[1] , byte_45[0], byte_45[1], byte_6, byte_7]
+
+    byte_string =  ''.join(byte_list)
+    ser.write(byte_string)
+    #ser.write(data.byte_string)
 
 def SubscribeAndPublish():
     rospy.init_node('serial_data_control', anonymous=True)
     #change topic name as required
-    rospy.Subscriber('/dumpster_detection/dumpster_location', DumpsterCAN, callback) 
+    rospy.Subscriber('/dumpster_detection/dumpster_location', DumpsterInfo, callback) 
     rate = rospy.Rate(10) 
     add_thread = threading.Thread(target = thread_job)
     add_thread.start()
