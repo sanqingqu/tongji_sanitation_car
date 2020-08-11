@@ -21,7 +21,7 @@ from std_msgs.msg import Byte
 from std_msgs.msg import ByteMultiArray
 
 import matplotlib.pyplot as plt
-from camera_lidar_fusion_detection.msg import DumpsterCAN
+from camera_lidar_fusion_detection.msg import DumpsterInfo
 
 import sys
 sys.path.append('/home/haitao/Project/tongji_sanitation_car/src/yolo_detect_pkg/src') 
@@ -75,7 +75,7 @@ class DumpsterDetection(object):
         self.laser_subscriber = rospy.Subscriber(laser_sub_topic, LaserScan,
                                                 self.laser_extraction_callback, queue_size=3)
 
-        self.dumpster_detect_publisher = rospy.Publisher(self.output_topic, DumpsterCAN, queue_size=3)
+        self.dumpster_detect_publisher = rospy.Publisher(self.output_topic, DumpsterInfo, queue_size=3)
 
 
     def img_extraction_callback(self, compressed_img_msg):
@@ -447,7 +447,8 @@ class DumpsterDetection(object):
                 right_gap = np.clip(right_gap, a_min=0, a_max=255)
                 lateral_dis = np.clip(lateral_dis, a_min=0, a_max=255)
 
-                byte_0 = np.uint8(2).tobytes()
+                # byte_0 = np.uint8(2).tobytes()
+                continuous_dumpster = 2
                 
             else:
                 continue_grab = 0
@@ -463,15 +464,17 @@ class DumpsterDetection(object):
                 lateral_dis = lateral_dis * 1000 / 4
                 lateral_dis = np.clip(lateral_dis, a_min=0, a_max=255)     
 
-                byte_0 = np.uint8(0).tobytes()
+                # byte_0 = np.uint8(0).tobytes()
+                continuous_dumpster = 0
             
-            byte_1 = np.uint8(lateral_dis).tobytes()
-            byte_23 = np.float16(side_offset).tobytes()
-            byte_45 = np.float16(object_width).tobytes()
-            byte_6 = np.uint8(left_gap).tobytes()
-            byte_7 = np.uint8(right_gap).tobytes()
+            # byte_1 = np.uint8(lateral_dis).tobytes()
+            # byte_23 = np.float16(side_offset).tobytes()
+            # byte_45 = np.float16(object_width).tobytes()
+            # byte_6 = np.uint8(left_gap).tobytes()
+            # byte_7 = np.uint8(right_gap).tobytes()
 
-            return [byte_0, byte_1, byte_23[0], byte_23[1] , byte_45[0], byte_45[1], byte_6, byte_7]
+            # return [byte_0, byte_1, byte_23[0], byte_23[1] , byte_45[0], byte_45[1], byte_6, byte_7]
+            return [continuous_dumpster, lateral_dis, side_offset, object_width, left_gap, right_gap]
         else:
             return None    
             
@@ -500,9 +503,17 @@ class DumpsterDetection(object):
                 else:
                     if self.debug_mode:
                         print("The Hex representation of 8 bytes info\n:{}".format(dumpster_info))
-                    dumpster_msg = DumpsterCAN()
+                    # dumpster_msg = DumpsterCAN()
+                    # dumpster_msg.header.stamp = rospy.Time.now()
+                    # dumpster_msg.byte_string = ''.join(dumpster_info)
+                    dumpster_msg = DumpsterInfo()
                     dumpster_msg.header.stamp = rospy.Time.now()
-                    dumpster_msg.byte_string = ''.join(dumpster_info)
+                    dumpster_msg.continuous_dumpster = dumpster_info[0]
+                    dumpster_msg.lateral_dis = dumpster_info[1]
+                    dumpster_msg.side_offset = dumpster_info[2]
+                    dumpster_msg.object_width = dumpster_info[3]
+                    dumpster_msg.left_gap = dumpster_info[4]
+                    dumpster_msg.right_gap = dumpster_info[5]
                     # TODO:
                     # current the data convertion has problem, need to fix!!!
                     # 

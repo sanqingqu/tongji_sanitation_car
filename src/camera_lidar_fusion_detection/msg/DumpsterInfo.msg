@@ -1,0 +1,7 @@
+Header header
+int32 continuous_dumpster
+float32 lateral_dis
+float32 side_offset
+float32 object_width
+int32 left_gap
+int32 right_gap
