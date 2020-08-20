@@ -1,0 +1,8 @@
+people
+rubbish_bin
+nonstandard
+roadside
+bicycle
+car
+tree
+8
