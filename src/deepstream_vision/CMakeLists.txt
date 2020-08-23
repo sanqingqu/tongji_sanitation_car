@@ -154,6 +154,9 @@ target_link_libraries(simple_visualize_sink ${GST_LIBRARIES} common)
 add_library(opencv_dewarp_source src/opencv_dewarp_source.cpp)
 target_link_libraries(opencv_dewarp_source ${GST_LIBRARIES} ${OpenCV_LIBS} common)
 
+add_library(ros_image_source src/ros_image_source.cpp)
+target_link_libraries(ros_image_source ${GST_LIBRARIES} ${OpenCV_LIBS} common ${catkin_LIBRARIES})
+
 add_library(memory_mover src/memory_mover.cpp)
 target_link_libraries(simple_visualize_sink ${GST_LIBRARIES} ${DS_LIBRARIES} common)
 
@@ -196,6 +199,7 @@ endif()
 # add_executable(${PROJECT_NAME}_node src/deepstream_vision_node.cpp)
 add_executable(test_basic_pipeline src/test_basic_pipeline.cpp)
 add_executable(test_nvinfer_pipeline src/test_nvinfer_pipeline.cpp)
+add_executable(test_ros_nvinfer_pipeline src/test_ros_nvinfer_pipeline.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -218,6 +222,10 @@ target_link_libraries(test_basic_pipeline
 
 target_link_libraries(test_nvinfer_pipeline
   simple_pipeline simple_visualize_sink opencv_dewarp_source memory_mover common nvinfer_node
+)
+
+target_link_libraries(test_ros_nvinfer_pipeline
+  simple_pipeline simple_visualize_sink ros_image_source memory_mover common nvinfer_node ${catkin_LIBRARIES}
 )
 
 #############

@@ -1,8 +1,7 @@
-people
-rubbish_bin
-nonstandard
-roadside
 bicycle
 car
+nonstandard
+people
+roadside
+rubbish_bin
 tree
-8
