@@ -11,6 +11,9 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -fmax-errors=1")
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  rospy
+  message_generation
+  std_msgs
 )
 
 find_package( OpenCV REQUIRED )
@@ -55,6 +58,12 @@ find_package( OpenCV REQUIRED )
 #   Message2.msg
 # )
 
+add_message_files(
+  FILES
+  BBox.msg
+  BBoxArray.msg
+)
+
 ## Generate services in the 'srv' folder
 # add_service_files(
 #   FILES
@@ -70,10 +79,10 @@ find_package( OpenCV REQUIRED )
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs  # Or other packages containing msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -107,7 +116,7 @@ find_package( OpenCV REQUIRED )
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES deepstream_vision
-#  CATKIN_DEPENDS roscpp
+  CATKIN_DEPENDS roscpp message_runtime
 #  DEPENDS system_lib
 )
 
@@ -160,23 +169,26 @@ target_link_libraries(ros_image_source ${GST_LIBRARIES} ${OpenCV_LIBS} common ${
 add_library(memory_mover src/memory_mover.cpp)
 target_link_libraries(simple_visualize_sink ${GST_LIBRARIES} ${DS_LIBRARIES} common)
 
-add_library(nvinfer_node src/nvinfer_node.cpp)
-target_link_libraries(nvinfer_node ${GST_LIBRARIES} ${DS_LIBRARIES} common)
-
 # CFLAGS+= -I$(DS_SRC_PATH)/sources/includes \
 # 	  -I/usr/local/cuda-$(CUDA_VER)/include
-
 # CFLAGS+= -Wall -std=c++11 -shared -fPIC
-
 # LIBS+= -lnvinfer -lnvparsers -L/usr/local/cuda-$(CUDA_VER)/lib64 -lcudart -lcublas
-
 # LFLAGS:= -Wl,--start-group $(LIBS) -Wl,--end-group
 add_library(nvdsinfer_custombboxparser_yolov3_tlt src/nvdsinfer_custombboxparser_yolov3_tlt.cpp)
 target_include_directories(nvdsinfer_custombboxparser_yolov3_tlt PUBLIC /usr/local/cuda-10.2/include)
-set_target_properties(${TARGET} PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -std=c++11 -shared -fPIC")
+set_target_properties(nvdsinfer_custombboxparser_yolov3_tlt PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -std=c++11 -shared -fPIC")
 target_link_directories(nvdsinfer_custombboxparser_yolov3_tlt PUBLIC /usr/local/cuda-10.2/lib64)
 target_link_libraries(nvdsinfer_custombboxparser_yolov3_tlt nvinfer nvparsers cudart cublas)
 
+# ros_version
+add_library(ros_nvdsinfer_custombboxparser_yolov3_tlt src/nvdsinfer_custombboxparser_yolov3_tlt.cpp)
+target_include_directories(ros_nvdsinfer_custombboxparser_yolov3_tlt PUBLIC /usr/local/cuda-10.2/include)
+set_target_properties(ros_nvdsinfer_custombboxparser_yolov3_tlt PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -std=c++11 -shared -fPIC" COMPILE_DEFINITIONS "_ROS_PIPELINE_")
+target_link_directories(ros_nvdsinfer_custombboxparser_yolov3_tlt PUBLIC /usr/local/cuda-10.2/lib64)
+target_link_libraries(ros_nvdsinfer_custombboxparser_yolov3_tlt nvinfer nvparsers cudart cublas)
+
+add_library(nvinfer_node src/nvinfer_node.cpp)
+target_link_libraries(nvinfer_node ${GST_LIBRARIES} ${DS_LIBRARIES} common)
 
 option(LOWERCAM "LOWER CAMERA OR UPPER CAMERA" ON)
 
@@ -192,6 +204,8 @@ endif()
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 # add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(nvdsinfer_custombboxparser_yolov3_tlt deepstream_vision_generate_messages_cpp)
+add_dependencies(ros_nvdsinfer_custombboxparser_yolov3_tlt deepstream_vision_generate_messages_cpp)
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context

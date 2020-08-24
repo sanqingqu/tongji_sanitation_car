@@ -68,10 +68,10 @@ is-classifier=0
 cluster-mode=3
 output-blob-names=BatchedNMS
 parse-bbox-func-name=NvDsInferParseCustomYOLOV3TLT
-custom-lib-path= ../../../devel/lib/libnvdsinfer_custombboxparser_yolov3_tlt.so
+custom-lib-path= ../../../devel/lib/libros_nvdsinfer_custombboxparser_yolov3_tlt.so
 
 [class-attrs-all]
-pre-cluster-threshold=0.3
+pre-cluster-threshold=0.4
 #eps=0.2
 roi-top-offset=0
 roi-bottom-offset=0

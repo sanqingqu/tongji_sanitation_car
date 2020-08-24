@@ -13,12 +13,18 @@
 #include <iostream>
 #include "nvdsinfer_custom_impl.h"
 #include <cassert>
+#include <deepstream_vision/BBoxArray.h>
+
+#ifdef _ROS_PIPELINE_
+#include <ros/ros.h>
+#endif
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define CLIP(a,min,max) (MAX(MIN(a, max), min))
 #define DIVIDE_AND_ROUND_UP(a, b) ((a + b - 1) / b)
 
+using namespace ::deepstream_vision;
 
 /* This is a sample bounding box parsing function for the sample yolov3
  *
@@ -55,7 +61,9 @@ bool NvDsInferParseCustomYOLOV3TLT (std::vector<NvDsInferLayerInfo> const &outpu
     float* p_classes = (float *) outputLayersInfo[3].buffer;
 
     const int out_class_size = detectionParams.numClassesConfigured;
-    const float threshold = detectionParams.perClassThreshold[0];
+    //const float threshold = detectionParams.perClassThreshold[0];
+    assert(7 == detectionParams.perClassThreshold.size());
+    const float thresholds[] = {0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3};
 
     const int keep_top_k = 200;
     const char* log_enable = std::getenv("ENABLE_DEBUG");
@@ -65,17 +73,27 @@ bool NvDsInferParseCustomYOLOV3TLT (std::vector<NvDsInferLayerInfo> const &outpu
     //           <<p_keep_count[0] << std::endl;
     // }
 
+#ifdef _ROS_PIPELINE_
+    static ros::NodeHandle nh;
+#ifdef LOWER
+    static ros::Publisher pub = nh.advertise<BBoxArray>("/yolo_detect_lower/bbox_results", 1);
+#elif defined UPPER
+    static ros::Publisher pub = nh.advertise<BBoxArray>("/yolo_detect_upper/bbox_results", 1);
+#endif
+    BBoxArray ros_msg;
+#endif
+
     for (int i = 0; i < p_keep_count[0] && objectList.size() <= keep_top_k; i++) {
 
-        if ( p_scores[i] < threshold) continue;
         assert((int) p_classes[i] < out_class_size);
+        if ( p_scores[i] < thresholds[(int)p_classes[i]]) continue;
+        if (p_bboxes[4*i+2] < p_bboxes[4*i] || p_bboxes[4*i+3] < p_bboxes[4*i+1]) continue;
 
         if(log_enable != NULL && std::stoi(log_enable)) {
             std::cout << "label/conf/ x/y x/y -- "
                       << p_classes[i] << " " << p_scores[i] << " "
                       << p_bboxes[4*i] << " " << p_bboxes[4*i+1] << " " << p_bboxes[4*i+2] << " "<< p_bboxes[4*i+3] << " " << std::endl;
         }
-        if(p_bboxes[4*i+2] < p_bboxes[4*i] || p_bboxes[4*i+3] < p_bboxes[4*i+1]) continue;
 
         NvDsInferObjectDetectionInfo object;
         object.classId = (int) p_classes[i];
@@ -88,9 +106,25 @@ bool NvDsInferParseCustomYOLOV3TLT (std::vector<NvDsInferLayerInfo> const &outpu
         object.height = CLIP((p_bboxes[4*i+3] - p_bboxes[4*i+1]), 0, networkInfo.height - 1);
 
         objectList.push_back(object);
-	// printf("ok"); 
-    fflush(0);
+
+#ifdef _ROS_PIPELINE_
+        /* construct ros message */
+        //3:people, 5:rubbish_bin
+        BBox bbox;
+        bbox.class_id = object.classId;
+        bbox.x_top_left = object.left;
+        bbox.y_top_left = object.top;
+        bbox.x_bottom_right = object.left + object.width;
+        bbox.y_bottom_right = object.top + object.height;
+        ros_msg.bboxes.push_back(bbox);
+#endif
+    // printf("ok"); fflush(0);
     }
+
+#ifdef _ROS_PIPELINE_
+    if(ros::ok()) pub.publish(ros_msg);
+#endif
+
     return true;
 }
 
