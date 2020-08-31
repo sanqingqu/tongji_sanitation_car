@@ -13,6 +13,12 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   port_serial
   yolo_detect_pkg
+
+  cv_bridge
+  sensor_msgs
+  deepstream_vision
+  camera_lidar_fusion_detection
+  control_signal
 )
 
 ## System dependencies are found with CMake's conventions

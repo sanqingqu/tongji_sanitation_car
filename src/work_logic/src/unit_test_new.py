@@ -5,7 +5,7 @@ import rospy
 from cv_bridge import CvBridge
 from sensor_msgs.msg import CompressedImage
 #subscribe up_camera_detection
-from deepstream_vision.msg import BboxArray,Bbox
+from deepstream_vision.msg import BBoxArray,BBox
 #subscribe perception_signal
 #from perception_signal.msg import Perceptionflag
 from camera_lidar_fusion_detection.msg import DumpsterInfo
@@ -142,7 +142,7 @@ def listener():
 
     rospy.init_node('listener', anonymous=True)
     rospy.Subscriber("/undistort_upper/compressed", CompressedImage, upimage_callback)#实时接收上摄像头的视频
-    rospy.Subscriber("/yolo_detect_upper/bbox_results", BboxArray, updetection_callback)#实时接收检测结果信号
+    rospy.Subscriber("/yolo_detect_upper/bbox_results", BBoxArray, updetection_callback)#实时接收检测结果信号
     #rospy.Subscriber("stop_signal_result", Stopflag, zhuche_callback)#接收驻车信号
     rospy.Subscriber("/dumpster_detection/dumpster_location", DumpsterInfo, perception_callback)#接收感知信号
     rospy.Subscriber("control_signal_result",Signal,controlsignal_callback)#控制器信号
