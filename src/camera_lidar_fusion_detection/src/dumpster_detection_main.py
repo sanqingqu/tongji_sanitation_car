@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-
+import sys
 import roslib
 import rospy
 import cv2
@@ -19,20 +19,22 @@ from sensor_msgs.msg import CompressedImage
 from std_msgs.msg import Bool
 from std_msgs.msg import Byte
 from std_msgs.msg import ByteMultiArray
+from deepstream_vision.msg import BBoxArray
 
 import matplotlib.pyplot as plt
 from camera_lidar_fusion_detection.msg import DumpsterInfo
 
-import sys
-sys.path.append('/home/haitao/Project/tongji_sanitation_car/src/yolo_detect_pkg/src') 
-from dumpster_detect import ImageDumpsterDetector
+# import sys
+# sys.path.append('/home/haitao/Project/tongji_sanitation_car/src/yolo_detect_pkg/src') 
+# from dumpster_detect import ImageDumpsterDetector
 
 class DumpsterDetection(object):
 
     # This class is used to detect the dumpster's location in the camera field with the help of 2D-LiDAR 
     def __init__(self, camera_intrinic_param, lidar_to_camera_extrincic_param,
                  img_sub_topic="/undistort_lower/compressed", laser_sub_topic="/wr_scan",
-                 img_dumpster_detect_func=None,
+                 lower_detect_topic='/yolo_detect_lower/bbox_results',
+                 upper_detect_topic=None,
                  output_topic="/dumpster_detection/dumpster_location", debug_mode=False):
         
         # typically, the img_dumpster_detect_func is a image based dumpster detection function,
@@ -41,9 +43,9 @@ class DumpsterDetection(object):
 
         self.camera_intrinic_param = camera_intrinic_param 
         self.lidar_to_camera_extrincic_param = lidar_to_camera_extrincic_param 
-        self.img_dumpster_detect_func = img_dumpster_detect_func 
-        if self.img_dumpster_detect_func is None:
-            print("The Img Dumpster Detection Function IS NOT INITIALIZED CORRECTLY!!!")
+        # self.img_dumpster_detect_func = img_dumpster_detect_func 
+        # if self.img_dumpster_detect_func is None:
+        #     print("The Img Dumpster Detection Function IS NOT INITIALIZED CORRECTLY!!!")
 
         self.img_sub_topic = img_sub_topic 
         self.laser_sub_topic = laser_sub_topic 
@@ -52,15 +54,17 @@ class DumpsterDetection(object):
 
         self.input_img_pre = None 
         self.input_img_cur = None 
-        self.input_img_to_yolo = None 
+        # self.input_img_to_yolo = None 
         self.input_img_dtime = 0
         self.input_img_time_tick = rospy.get_time()
-        self.input_scan_np = None 
-        self.input_scan_np_cur = None 
+        self.input_scan_np = None
+        self.input_scan_np_cur = None
 
         self.input_scan_to_pixels = None 
         # self.fusion_img = None 
-        self.img_detected_bboxes_list = None 
+        self.lower_detected_bboxes_list = None
+        # TODO
+        # self.upper_detected_bboxes_list = None
         self.bbox_filter_flag_list = [] 
 
         self.geometric_filter_flag = None 
@@ -71,11 +75,18 @@ class DumpsterDetection(object):
 
         self.cv_bridge = CvBridge() 
         self.img_subscriber = rospy.Subscriber(img_sub_topic, CompressedImage,
-                                                self.img_extraction_callback, queue_size=3)
+                                                self.img_extraction_callback, queue_size=1)
         self.laser_subscriber = rospy.Subscriber(laser_sub_topic, LaserScan,
-                                                self.laser_extraction_callback, queue_size=3)
+                                                self.laser_extraction_callback, queue_size=1)
+        self.lower_detect_subscriber =  rospy.Subscriber(lower_detect_topic, BBoxArray,
+                                                self.lower_detect_callback, queue_size=1)
 
-        self.dumpster_detect_publisher = rospy.Publisher(self.output_topic, DumpsterInfo, queue_size=3)
+        self.dumpster_detect_publisher = rospy.Publisher(self.output_topic, DumpsterInfo, queue_size=1)
+        frame_shape = (416, 416) # hard-coded image size
+        # camera_mat = np.array([[367.0543074903704 * 0.5, 0.0, 990.6330750325744 * 0.5], [0.0, 366.7370079611347 * 0.5, 575.1183044201284 * 0.5], [0.0, 0.0, 1.0]])
+        self.new_camera_mat = np.array([[200.0, 0.0, 416.0 * 0.5], [0.0, 200.0, 416.0 * 0.5], [0.0, 0.0, 1.0]])
+        self.remap_map1, self.remap_map2 = cv2.initUndistortRectifyMap(
+            self.camera_intrinic_param, np.array([0.0, 0.0, 0.0, 0.0]), np.eye(3, 3), self.new_camera_mat, frame_shape, cv2.CV_16SC2)
 
 
     def img_extraction_callback(self, compressed_img_msg):
@@ -87,7 +98,9 @@ class DumpsterDetection(object):
         # ----------------------------------------------------------------------------
         self.input_img_pre = self.input_img_cur
         #print('compressed_img_msg',type(compressed_img_msg))
-        self.input_img_cur = self.cv_bridge.compressed_imgmsg_to_cv2(compressed_img_msg)
+        # self.input_img_cur = self.cv_bridge.compressed_imgmsg_to_cv2(compressed_img_msg)
+        self.input_img_cur = cv2.remap(self.cv_bridge.compressed_imgmsg_to_cv2(compressed_img_msg), self.remap_map1, self.remap_map2, cv2.INTER_LINEAR)
+        # self.input_img_cur = self.input_img_cur[:, 240:720]
         #print(type(self.input_img_cur))
         
         self.input_img_dtime = rospy.get_time() - self.input_img_time_tick
@@ -122,6 +135,11 @@ class DumpsterDetection(object):
         scan_y = (scan_ranges * np.sin(scan_rads)).reshape(-1, 1)
 
         self.input_scan_np_cur = np.concatenate((scan_x, scan_y), axis=1)
+    
+    def lower_detect_callback(self, lower_detect_message):
+        # self.input_img_to_yolo = self.input_img_cur
+        # self.input_scan_np = self.input_scan_np_cur
+        self.lower_detected_bboxes_list = lower_detect_message.bboxes
         
 
     def laser_point_projection(self):
@@ -133,7 +151,7 @@ class DumpsterDetection(object):
            the self.input_scan_np is updated by the img_dumpster_detection function. 
            and nor be maintained in this function.
         """
-        # self.input_scan_np = self.input_scan_np_cur
+        self.input_scan_np = self.input_scan_np_cur
 
         if self.input_scan_np is not None:
             zeros = np.zeros((len(self.input_scan_np), 1))
@@ -148,7 +166,7 @@ class DumpsterDetection(object):
                 transformed_points[:, 1] /= transformed_points[:, 2]
                 transformed_points[:, 2] = 1
                 # project laser_scan points to image
-                self.scan_to_pixels = np.dot(self.camera_intrinic_param, transformed_points.T).T.astype(np.int32)
+                self.scan_to_pixels = np.dot(self.new_camera_mat, transformed_points.T).T.astype(np.int32)
             
             except ValueError:
                 print("[ERROR]", __line__()),
@@ -156,22 +174,22 @@ class DumpsterDetection(object):
                 print zeros.shape
                 print ones.shape
 
-    def img_dumpster_detection(self):
-        if self.img_dumpster_detect_func is not None:
-            if self.input_img_cur is None:
-                print("[WARNING] no image received!")
-                return
+    # def img_dumpster_detection(self):
+    #     if self.img_dumpster_detect_func is not None:
+    #         if self.input_img_cur is None:
+    #             print("[WARNING] no image received!")
+    #             return
 
-            self.input_img_to_yolo = self.input_img_cur
-            self.input_scan_np = self.input_scan_np_cur
+    #         self.input_img_to_yolo = self.input_img_cur
+    #         self.input_scan_np = self.input_scan_np_cur
             
-            self.img_detected_bboxes_list = self.img_dumpster_detect_func(self.input_img_to_yolo)
-            print("[INFO]", sys._getframe().f_lineno, self.img_detected_bboxes_list)
-        else:
-            self.img_detected_bboxes_list = [np.array([393, 113, 584, 471],dtype=np.int32),
-                                            np.array([393, 113, 584, 471],dtype=np.int32)]
-            self.bbox_np = np.array([393, 113, 584, 471],dtype=np.int32)
-            self.bbox_np = np.concatenate((self.bbox_np, self.bbox_np))
+    #         self.img_detected_bboxes_list = self.img_dumpster_detect_func(self.input_img_to_yolo)
+    #         print("[INFO]", sys._getframe().f_lineno, self.img_detected_bboxes_list)
+    #     else:
+    #         self.img_detected_bboxes_list = [np.array([393, 113, 584, 471],dtype=np.int32),
+    #                                         np.array([393, 113, 584, 471],dtype=np.int32)]
+    #         self.bbox_np = np.array([393, 113, 584, 471],dtype=np.int32)
+    #         self.bbox_np = np.concatenate((self.bbox_np, self.bbox_np))
 
     def opflow_based_speed_estimation(self):
 
@@ -181,7 +199,7 @@ class DumpsterDetection(object):
             return
 
         img_h, img_w, _ = self.input_img_cur.shape
-        estimation_size = 100
+        estimation_size = 100 # TUNABLE: bottom region height for calculating speed
         img_h_start = img_h - estimation_size
         img_h_end = img_h_start + estimation_size
 
@@ -197,7 +215,7 @@ class DumpsterDetection(object):
         fx, fy = op_flow[y, x].T
         self.opflow_based_speed = abs(sum(fx)/np.size(fx)) / self.input_img_dtime
         
-        self.opflow_based_static_flag = True if self.opflow_based_speed < 5 else False 
+        self.opflow_based_static_flag = True if self.opflow_based_speed < 5 else False  # TUNABLE: threshold of speed
         
         # if self.debug_mode:
         #     lines = np.vstack([x, img_h_start + y, x + fx, img_h_start + y + fy]).T.reshape(-1, 2, 2)
@@ -342,14 +360,15 @@ class DumpsterDetection(object):
         transformed_points[:, 0] /= transformed_points[:, 2]
         transformed_points[:, 1] /= transformed_points[:, 2]
         transformed_points[:, 2] = 1
-        pixels = np.dot(self.camera_intrinic_param, transformed_points.T).T.astype(np.int32)
+        pixels = np.dot(self.new_camera_mat, transformed_points.T).T.astype(np.int32)
         
         # visualize the detected bboxes
-        print("[INFO]", sys._getframe().f_lineno, self.img_detected_bboxes_list)
-        for bbox in self.img_detected_bboxes_list:
-            cv2.rectangle(input_img, (bbox[0], bbox[1]),
-                                    (bbox[2], bbox[3]),
-                                    (0, 255, 0), 2)
+        print("[INFO]", sys._getframe().f_lineno, self.lower_detected_bboxes_list)
+        for bbox in self.lower_detected_bboxes_list:
+            if bbox.class_id == 5:
+                cv2.rectangle(input_img, (bbox.x_top_left, bbox.y_top_left),
+                                        (bbox.x_bottom_right, bbox.y_bottom_right),
+                                        (0, 255, 0), 2)
         # visualize the detected keypoints
         for pixel in pixels[0:len(detect_loc),:]:
             cv2.circle(input_img, (pixel[0], pixel[1]), 6, (0, 0, 255), -1)
@@ -366,17 +385,18 @@ class DumpsterDetection(object):
         self.laser_point_projection()
         self.bbox_filter_flag_list = []
 
-        if self.img_detected_bboxes_list is not None:
+        if self.lower_detected_bboxes_list is not None:
 
             detected_keypoints_list = []
             detected_dumpster_loc_list = []
 
-            for bbox in self.img_detected_bboxes_list:
+            for bbox in self.lower_detected_bboxes_list:
+                bbox_list = [bbox.class_id, bbox.x_top_left, bbox.y_top_left, bbox.x_bottom_right, bbox.y_bottom_right]
                 if self.scan_to_pixels is not None:
-                    x_flag = np.logical_and(self.scan_to_pixels[:, 0] >= bbox[0],
-                                            self.scan_to_pixels[:, 0] <= bbox[2])
-                    y_flag = np.logical_and(self.scan_to_pixels[:, 1] >= bbox[1],
-                                            self.scan_to_pixels[:, 1] <= bbox[3])
+                    x_flag = np.logical_and(self.scan_to_pixels[:, 0] >= bbox_list[1],
+                                            self.scan_to_pixels[:, 0] <= bbox_list[3])
+                    y_flag = np.logical_and(self.scan_to_pixels[:, 1] >= bbox_list[2],
+                                            self.scan_to_pixels[:, 1] <= bbox_list[4])
                     
                     filter_flag = np.logical_and(x_flag, y_flag)
 
@@ -421,8 +441,9 @@ class DumpsterDetection(object):
 
             #if self.debug_mode:
             if True:
+                # self.input_img_to_yolo = self.input_img_cur
                 detected_keypoints_list_np = np.array(detected_keypoints_list).reshape(-1, 2)
-                self.visualize_detection_result(detected_keypoints_list_np, self.input_scan_np[self.geometric_filter_flag,:], self.input_img_to_yolo)
+                self.visualize_detection_result(detected_keypoints_list_np, self.input_scan_np[self.geometric_filter_flag,:], self.input_img_cur)
 
             if len(detected_dumpster_loc_list) > 1:
 
@@ -481,7 +502,8 @@ class DumpsterDetection(object):
 
     def run(self):
         publish_rate = rospy.Rate(5)
-        opflow_based_speed_estimation_pub = rospy.Publisher("opflow_static", Bool, queue_size=3)
+        # publish speed info here
+        opflow_based_speed_estimation_pub = rospy.Publisher("opflow_static", Bool, queue_size=1)
         # ToDo: msg configuration 
         # detection_msg = Frame(data="tongji")
         self.opflow_based_speed = None
@@ -494,7 +516,7 @@ class DumpsterDetection(object):
             # if self.opflow_based_static_flag:
             if True:
                 # 2D img based dumpster bboxes detection
-                self.img_dumpster_detection()
+                #self.img_dumpster_detection()
                 # img_laser fusion dumpster detection
                 dumpster_info = self.laser_dumpster_detection()
 
@@ -547,16 +569,17 @@ def main(opts):
     dumpster_detector = DumpsterDetection(lower_camera_mat, lidar_to_lower_camera,
                                         img_sub_topic=opts.img_sub_topic,
                                         laser_sub_topic=opts.lidar_sub_topic,
-                                        img_dumpster_detect_func=ImageDumpsterDetector(),
+                                        lower_detect_topic=opts.lower_detect_topic,
+                                        upper_detect_topic=opts.upper_detect_topic,
                                         output_topic=opts.pub_dumpster_detect_topic,
                                         debug_mode=opts.debug_mode)
     # if dumpster_detector.input_img_cur:
     dumpster_detector.run()
     
-    try:
-        rospy.spin()
-    except KeyboardInterrupt:
-        print "Shutting down ROS image extraction module."
+    # try:
+    #     rospy.spin()
+    # except KeyboardInterrupt:
+    #     print "Shutting down ROS image extraction module."
 
 if __name__ == "__main__":
 
@@ -564,6 +587,8 @@ if __name__ == "__main__":
                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     opts.add_argument("--img_sub_topic", default="/undistort_lower/compressed", help="default: %(default)s")
     opts.add_argument("--lidar_sub_topic", default="/wr_scan", help="default: %(default)s")
+    opts.add_argument("--lower_detect_topic", default="/yolo_detect_lower/bbox_results", help="default:%(default)s")
+    opts.add_argument("--upper_detect_topic", default=None, help="default:%(default)s")
     opts.add_argument("--pub_dumpster_detect_topic", default="/dumpster_detection/dumpster_location", help="default: %(default)s")
     opts.add_argument("--debug_mode", action='store_true', help="This debug flag is used to visualize the detection results.\n")
     input_opts = opts.parse_args()

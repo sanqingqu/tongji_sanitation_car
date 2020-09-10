@@ -77,6 +77,9 @@ static gboolean feed_data_to_appsrc0(RosJPEGImageSource * cv_src) {
   //fprintf(stderr, "cv_cap read ok:%d\n", ok); fflush(0);
   // preprocessing (crop&pad)
 //   if (cv_src->enable_dewarp) cv::remap(*pframe, *pframe, cv_src->dewarp_map1, cv_src->dewarp_map2, cv::INTER_LINEAR); 
+    cv::cvtColor(*pframe, *pframe, cv::COLOR_BGR2GRAY);
+    // cv::equalizeHist(*pframe, *pframe);
+    cv::cvtColor(*pframe, *pframe, cv::COLOR_GRAY2BGR);
     cv::remap(*pframe, *pframe, cv_src->dewarp_map1, cv_src->dewarp_map2, cv::INTER_LINEAR); 
     //*pframe = cv::equalizeIntensity(*pframe);
     //fprintf(stderr, "[%d, %d] ", pframe->rows, pframe->cols); fflush(0);
@@ -107,6 +110,7 @@ static void appsrc0_on_enough_data(GstElement *sink, RosJPEGImageSource *cv_src)
   }
 }
 
+#if 0
 static void init_undistortion_map(cv::Mat& map1, cv::Mat& map2) {
 #ifdef LOWER
   cv::Mat K = (cv::Mat_<float>(3,3) << 146.4624354954575f, 0.0f, 409.6204399145412f,
@@ -122,11 +126,12 @@ static void init_undistortion_map(cv::Mat& map1, cv::Mat& map2) {
   assert(0);
 #endif
   cv::Mat R = (cv::Mat_<float>(3,3) << 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-  cv::Mat P = (cv::Mat_<float>(3,3) << 150.0f, 0.0f, UNWARP_WIDTH/2.0f,
-                    0.0f, 150.0f, UNWARP_HEIGHT/2.0f, 0.0f, 0.0f, 1.0f);
+  cv::Mat P = (cv::Mat_<float>(3,3) << 200.0f, 0.0f, UNWARP_WIDTH/2.0f,
+                    0.0f, 200.0f, UNWARP_HEIGHT/2.0f, 0.0f, 0.0f, 1.0f);
   cv::Size net_input_sz(UNWARP_WIDTH, UNWARP_HEIGHT);
   cv::fisheye::initUndistortRectifyMap ( K, D, R, P, net_input_sz, CV_16SC2, map1, map2 );
 }
+#endif
 
 static void init_undistortion_map_nodist(cv::Mat& map1, cv::Mat& map2) {
 #ifdef LOWER

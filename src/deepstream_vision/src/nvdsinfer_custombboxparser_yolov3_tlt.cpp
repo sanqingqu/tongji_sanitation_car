@@ -62,7 +62,7 @@ bool NvDsInferParseCustomYOLOV3TLT (std::vector<NvDsInferLayerInfo> const &outpu
 
     const int out_class_size = detectionParams.numClassesConfigured;
     //const float threshold = detectionParams.perClassThreshold[0];
-    assert(7 == detectionParams.perClassThreshold.size());
+    // assert(7 == detectionParams.perClassThreshold.size());
     const float thresholds[] = {0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3};
 
     const int keep_top_k = 200;

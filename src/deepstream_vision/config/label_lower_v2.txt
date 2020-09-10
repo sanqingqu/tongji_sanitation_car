@@ -1,0 +1,4 @@
+person
+rubbish_bin
+trash_overlapped
+trash_truncated
