@@ -1,8 +1,10 @@
 #!/bin/bash -ex
 
 ### Configurations ###
-ROS_MASTER_IP=192.168.101.1
-ROS_CLIENT_0_IP=192.168.101.2
+SUBNET=192.168.101
+ROS_MASTER_IP=$SUBNET.1
+ROS_CLIENT_0_IP=$SUBNET.2
+GATEWAY_IP=$SUBNET.254
 
 ### Globals ###
 export HOSTNAME=$(hostname)
@@ -35,6 +37,6 @@ setup_network () {
   ip route show default
 }
 
-setup_network eth0 $ROS_IP $ROS_MASTER_IP
+setup_network eth0 $ROS_IP $GATEWAY_IP
 
 exit 0
