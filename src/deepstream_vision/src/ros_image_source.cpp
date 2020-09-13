@@ -78,7 +78,7 @@ static gboolean feed_data_to_appsrc0(RosJPEGImageSource * cv_src) {
   // preprocessing (crop&pad)
 //   if (cv_src->enable_dewarp) cv::remap(*pframe, *pframe, cv_src->dewarp_map1, cv_src->dewarp_map2, cv::INTER_LINEAR); 
     cv::cvtColor(*pframe, *pframe, cv::COLOR_BGR2GRAY);
-    // cv::equalizeHist(*pframe, *pframe);
+    //cv::equalizeHist(*pframe, *pframe);
     cv::cvtColor(*pframe, *pframe, cv::COLOR_GRAY2BGR);
     cv::remap(*pframe, *pframe, cv_src->dewarp_map1, cv_src->dewarp_map2, cv::INTER_LINEAR); 
     //*pframe = cv::equalizeIntensity(*pframe);

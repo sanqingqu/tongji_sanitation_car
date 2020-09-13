@@ -52,7 +52,7 @@ model-color-format=1
 labelfile-path=label_up_0903.txt
 #tlt-encoded-model=../data/yolo_0812_300.etlt
 #tlt-model-key=nvidia_tlt
-model-engine-file=../data/up_0905/yolo_resnet18_epoch_100.engine
+model-engine-file=../data/up_onlyperson/yolo_resnet18_epoch_169.engine
 # rubbish_bin(0) + people(1)
 #uff-input-dims=3;544;960;0
 #uff-input-dims=3;416;416;0
@@ -72,11 +72,11 @@ parse-bbox-func-name=NvDsInferParseCustomYOLOV3TLT
 custom-lib-path= ../../../devel/lib/libros_nvdsinfer_custombboxparser_yolov3_tlt.so
 
 [class-attrs-all]
-pre-cluster-threshold=0.7
-#eps=0.2
+pre-cluster-threshold=0.01
+eps=0.1
 roi-top-offset=0
 roi-bottom-offset=0
 detected-min-w=0
-detected-min-h=0
+detected-min-h=100
 detected-max-w=0
 detected-max-h=0

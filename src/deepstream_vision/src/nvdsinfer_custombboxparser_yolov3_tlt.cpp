@@ -63,7 +63,7 @@ bool NvDsInferParseCustomYOLOV3TLT (std::vector<NvDsInferLayerInfo> const &outpu
     const int out_class_size = detectionParams.numClassesConfigured;
     //const float threshold = detectionParams.perClassThreshold[0];
     // assert(7 == detectionParams.perClassThreshold.size());
-    const float thresholds[] = {0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3};
+    const float thresholds[] = {0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01};
 
     const int keep_top_k = 200;
     const char* log_enable = std::getenv("ENABLE_DEBUG");
@@ -109,9 +109,10 @@ bool NvDsInferParseCustomYOLOV3TLT (std::vector<NvDsInferLayerInfo> const &outpu
 
 #ifdef _ROS_PIPELINE_
         /* construct ros message */
-        //3:people, 5:rubbish_bin
+        //1:people, 0:rubbish_bin
         BBox bbox;
         bbox.class_id = object.classId;
+        bbox.score = object.detectionConfidence;
         bbox.x_top_left = object.left;
         bbox.y_top_left = object.top;
         bbox.x_bottom_right = object.left + object.width;

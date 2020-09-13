@@ -1,4 +1,5 @@
 int32 class_id
+float32 score
 int32 x_top_left
 int32 y_top_left
 int32 x_bottom_right
