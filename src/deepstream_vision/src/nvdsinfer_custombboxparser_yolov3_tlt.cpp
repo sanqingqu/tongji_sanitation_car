@@ -123,7 +123,10 @@ bool NvDsInferParseCustomYOLOV3TLT (std::vector<NvDsInferLayerInfo> const &outpu
     }
 
 #ifdef _ROS_PIPELINE_
-    if(ros::ok()) pub.publish(ros_msg);
+    if(ros::ok()) {
+        ros_msg.header.stamp = ros::Time::now() - ros::Duration(0.1);
+        pub.publish(ros_msg);
+    }
 #endif
 
     return true;

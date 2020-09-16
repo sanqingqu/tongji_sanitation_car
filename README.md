@@ -8,6 +8,23 @@ This repo is used to maintain the *tongji sanitation-car* project's visual perce
 >
 > > Due to the requirements of the Ros, Python 2.7 is required.
 
+#### Graph
+
+```
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ~~  traversing 7 packages in topological order:
+-- ~~  - image_view
+-- ~~  - undistortion
+-- ~~  - deepstream_vision
+-- ~~  - wr_lidar_driver
+-- ~~  - fusion_detection
+-- ~~  - can_adapter
+-- ~~  - display
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
+
+![](tjsan_dag.png)
+
 #### Use WR_LiDAR
 
 you should first configure your local static network ip address  to make sure your device and the wr_lidar are in the same network segment. (The lidar's default ip is `192.168.0.10`)

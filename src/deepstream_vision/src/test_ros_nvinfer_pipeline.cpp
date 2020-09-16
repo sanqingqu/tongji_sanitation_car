@@ -12,7 +12,11 @@ void trap_ctrl_c(int signum) {
 }
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "yolo_object_detector");
+#ifdef LOWER
+  ros::init(argc, argv, "lower_yolo");
+#elif defined UPPER
+  ros::init(argc, argv, "upper_yolo");
+#endif
   /* Check input arguments */
   if (argc != 2) {
     g_printerr ("Usage: %s <model config filename>\n", argv[0]);

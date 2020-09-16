@@ -1,23 +1,20 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(deepstream_vision)
+project(fusion_detection)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
-
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -fmax-errors=1")
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  message_generation
   roscpp
   rospy
-  message_generation
   std_msgs
-  undistortion
+  wr_lidar_driver
+  deepstream_vision
 )
-
-find_package( OpenCV REQUIRED )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -53,16 +50,12 @@ find_package( OpenCV REQUIRED )
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
-
 add_message_files(
   FILES
-  BBox.msg
-  BBoxArray.msg
+  DumpsterInfo.msg
+  DumpsterLoc.msg
+  DumpsterLocArray.msg
+  DumpsterCAN.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -82,7 +75,7 @@ add_message_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  std_msgs  # Or other packages containing msgs
+  std_msgs
 )
 
 ################################################
@@ -115,12 +108,11 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-#  LIBRARIES deepstream_vision
-  CATKIN_DEPENDS roscpp message_runtime
+#  INCLUDE_DIRS include
+#  LIBRARIES lidar_camera_fusion_detect
+#  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
-
 
 ###########
 ## Build ##
@@ -129,92 +121,24 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
-  include/deepstream_vision/
-  /opt/nvidia/deepstream/deepstream/sources/includes/
-  /usr/include/opencv4/opencv
-  /usr/include/opencv4
-  /usr/include/gstreamer-1.0
-  /usr/include/glib-2.0
-  /usr/lib/aarch64-linux-gnu/glib-2.0/include
+# include
   ${catkin_INCLUDE_DIRS}
 )
 
-link_directories(
-  /opt/nvidia/deepstream/deepstream/lib
-)
-
-set(GST_LIBRARIES gstreamer-1.0 gobject-2.0 glib-2.0)
-set(DS_LIBRARIES nvdsgst_meta nvds_meta)
-
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/deepstream_vision.cpp
+#   src/${PROJECT_NAME}/lidar_camera_fusion_detect.cpp
 # )
-
-add_library(common src/common.cpp)
-target_link_libraries(common ${GST_LIBRARIES} )
-
-add_library(simple_pipeline src/simple_pipeline.cpp)
-target_link_libraries(simple_pipeline ${GST_LIBRARIES} common)
-
-add_library(simple_visualize_sink src/simple_visualize_sink.cpp)
-target_link_libraries(simple_visualize_sink ${GST_LIBRARIES} common)
-
-add_library(opencv_dewarp_source src/opencv_dewarp_source.cpp)
-target_link_libraries(opencv_dewarp_source ${GST_LIBRARIES} ${OpenCV_LIBS} common)
-
-add_library(ros_image_source src/ros_image_source.cpp)
-target_link_libraries(ros_image_source ${GST_LIBRARIES} ${OpenCV_LIBS} common ${catkin_LIBRARIES})
-
-add_library(memory_mover src/memory_mover.cpp)
-target_link_libraries(simple_visualize_sink ${GST_LIBRARIES} ${DS_LIBRARIES} common)
-
-# CFLAGS+= -I$(DS_SRC_PATH)/sources/includes \
-# 	  -I/usr/local/cuda-$(CUDA_VER)/include
-# CFLAGS+= -Wall -std=c++11 -shared -fPIC
-# LIBS+= -lnvinfer -lnvparsers -L/usr/local/cuda-$(CUDA_VER)/lib64 -lcudart -lcublas
-# LFLAGS:= -Wl,--start-group $(LIBS) -Wl,--end-group
-add_library(nvdsinfer_custombboxparser_yolov3_tlt src/nvdsinfer_custombboxparser_yolov3_tlt.cpp)
-target_include_directories(nvdsinfer_custombboxparser_yolov3_tlt PUBLIC /usr/local/cuda-10.2/include)
-set_target_properties(nvdsinfer_custombboxparser_yolov3_tlt PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -std=c++11 -shared -fPIC")
-target_link_directories(nvdsinfer_custombboxparser_yolov3_tlt PUBLIC /usr/local/cuda-10.2/lib64)
-target_link_libraries(nvdsinfer_custombboxparser_yolov3_tlt nvinfer nvparsers cudart cublas)
-
-# ros_version
-add_library(ros_nvdsinfer_custombboxparser_yolov3_tlt src/nvdsinfer_custombboxparser_yolov3_tlt.cpp)
-target_include_directories(ros_nvdsinfer_custombboxparser_yolov3_tlt PUBLIC /usr/local/cuda-10.2/include)
-set_target_properties(ros_nvdsinfer_custombboxparser_yolov3_tlt PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -std=c++11 -shared -fPIC" COMPILE_DEFINITIONS "_ROS_PIPELINE_")
-target_link_directories(ros_nvdsinfer_custombboxparser_yolov3_tlt PUBLIC /usr/local/cuda-10.2/lib64)
-target_link_libraries(ros_nvdsinfer_custombboxparser_yolov3_tlt nvinfer nvparsers cudart cublas)
-
-add_library(nvinfer_node src/nvinfer_node.cpp)
-target_link_libraries(nvinfer_node ${GST_LIBRARIES} ${DS_LIBRARIES} common)
-
-option(LOWERCAM "LOWER CAMERA OR UPPER CAMERA" ON)
-
-if(LOWERCAM)
-  message("-- Using lower camera parameters")
-  add_compile_definitions(LOWER)
-else()
-  message("-- Using upper camera parameters")
-  add_compile_definitions(UPPER)
-endif()
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 # add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(nvdsinfer_custombboxparser_yolov3_tlt deepstream_vision_generate_messages_cpp)
-add_dependencies(ros_nvdsinfer_custombboxparser_yolov3_tlt deepstream_vision_generate_messages_cpp)
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/deepstream_vision_node.cpp)
-add_executable(test_basic_pipeline src/test_basic_pipeline.cpp)
-add_executable(test_nvinfer_pipeline src/test_nvinfer_pipeline.cpp)
-add_executable(test_ros_nvinfer_pipeline src/test_ros_nvinfer_pipeline.cpp)
+# add_executable(${PROJECT_NAME}_node src/lidar_camera_fusion_detect_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -230,18 +154,6 @@ add_executable(test_ros_nvinfer_pipeline src/test_ros_nvinfer_pipeline.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-
-target_link_libraries(test_basic_pipeline
-  simple_pipeline simple_visualize_sink opencv_dewarp_source memory_mover common
-)
-
-target_link_libraries(test_nvinfer_pipeline
-  simple_pipeline simple_visualize_sink opencv_dewarp_source memory_mover common nvinfer_node
-)
-
-target_link_libraries(test_ros_nvinfer_pipeline
-  simple_pipeline simple_visualize_sink ros_image_source memory_mover common nvinfer_node ${catkin_LIBRARIES}
-)
 
 #############
 ## Install ##
@@ -290,7 +202,7 @@ target_link_libraries(test_ros_nvinfer_pipeline
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_deepstream_vision.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_lidar_camera_fusion_detect.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
