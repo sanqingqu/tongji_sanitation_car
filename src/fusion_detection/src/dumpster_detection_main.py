@@ -40,7 +40,7 @@ class DumpsterDetection(object):
                  output_topic="/dumpster_detection/dumpster_location", debug_mode=False):
         
         # parameters
-        self.camera_intrinic_param = camera_intrinic_param 
+        self.lower_camera_intrinic_param = lower_camera_intrinic_param 
         self.lidar_to_camera_extrincic_param = lidar_to_camera_extrincic_param
         self.lower_image_topic = lower_image_topic 
         self.laser_topic = laser_topic 
@@ -71,7 +71,7 @@ class DumpsterDetection(object):
         frame_shape = (416, 416) # TUNABLE: hard-coded image size
         self.new_camera_mat = np.array([[200.0, 0.0, 416.0 * 0.5], [0.0, 200.0, 416.0 * 0.5], [0.0, 0.0, 1.0]])
         self.remap_map1, self.remap_map2 = cv2.initUndistortRectifyMap(
-            self.camera_intrinic_param, np.array([0.0, 0.0, 0.0, 0.0]), np.eye(3, 3), self.new_camera_mat, frame_shape, cv2.CV_16SC2)
+            self.lower_camera_intrinic_param, np.array([0.0, 0.0, 0.0, 0.0]), np.eye(3, 3), self.new_camera_mat, frame_shape, cv2.CV_16SC2)
         self.new_camera_mat = self.new_camera_mat.reshape(1, 3, 3)
 
         self.dumpster_detect_publisher = rospy.Publisher(self.output_topic, DumpsterInfo, queue_size=1)
@@ -389,6 +389,7 @@ class DumpsterDetection(object):
     def laser_dumpster_detection(self):
 
         # self.laser_point_projection()
+        #self.input_scan_np = self.input_scan_np_cur
         self.bbox_filter_flag_list = [] # filter for lidar scan to pixel points, each corresponding to one bbox
 
         if self.lower_detected_bboxes_list is not None:

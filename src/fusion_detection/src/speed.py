@@ -3,6 +3,7 @@
 import cv2
 import rospy
 import numpy as np
+import utils
 
 class SpeedEstimation:
 
@@ -39,3 +40,6 @@ class SpeedEstimation:
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         frame = frame[self.image_row_min::self.downsample_step, ::self.downsample_step]
         return frame
+
+    def __str__(self):
+        return utils.valid_format("%.2f", self.filtered_speed, float, "None")

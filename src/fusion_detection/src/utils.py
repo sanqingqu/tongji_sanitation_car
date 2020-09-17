@@ -13,6 +13,9 @@ def cfg_extrinsic_type(extrinsic):
     t = np.array(extrinsic.translate).reshape((3, 1))
     return Namespace(R=R, t=t)
 
+def valid_format(format_string, x, value_type, fallback_value):
+    return (format_string % x) if isinstance(x, value_type) else fallback_value
+
 class ImageCropper:
 
     def __init__(self, camera_mat, new_camera_mat, frame_shape):
@@ -32,10 +35,10 @@ class BBoxReverter:
 
 class Timer:
 
-    def __init__(self):
+    def __init__(self, lowpass=0.1):
         self.start = time()
         self.stop = None
-        self.lowpass = 0.3
+        self.lowpass = lowpass 
         self.highpass = 1 - self.lowpass
         self._fps = None
     
@@ -47,6 +50,12 @@ class Timer:
             self._fps = current_fps
         else:
             self._fps = self._fps * self.lowpass + current_fps * self.highpass
+
+    def __enter__(self):
+        self.start = time()
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.count()
     
     def fps(self):
         return self._fps
@@ -54,6 +63,12 @@ class Timer:
     def msec(self):
         if self._fps is None: return None
         return 1000.0 / self._fps
+
+    def fmt_msec(self, fmt="%.2f"):
+        return valid_format(fmt, self.msec(), float, "None")
+
+    def fmt_fps(self, fmt="%.1f"):
+        return valid_format(fmt, self.fps(), float, "None")
 
 class MsgBuffer:
 

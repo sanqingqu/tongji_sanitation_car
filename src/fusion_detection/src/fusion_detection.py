@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 #pylint: disable=no-member
 import configargparse
-import cv2
 import cv_bridge
 import curses
 import easydict
@@ -29,24 +28,30 @@ class FusionDumpsterDetectorNode:
         self.lower_reverter = utils.BBoxReverter(
             self.opts.lower_img_intrinsics,
             self.opts.lower_img_detect_intrinsics)
-        self.speed = speed.SpeedEstimation()
+        self.vehicle_speed = speed.SpeedEstimation()
         self.visualizer = visualizer.Visualizer(full_screen=self.opts.fullscreen)
         self.msgbuf = easydict.EasyDict({
             'wr_lidar' : utils.MsgBuffer(size=1),
             'lower_img' : utils.MsgBuffer(size=10),
             'lower_box' : utils.MsgBuffer(size=10),
         })
+        self.detect_results = easydict.EasyDict({
+            "vehicle_speed" : None,
+        })
+        self.fusion_synced_timer = utils.Timer()
+        self.fusion_detect_timer = utils.Timer()
+        self.vspeed_detect_timer = utils.Timer()
         rospy.init_node(node_name, anonymous=True)
-        self.timer = utils.Timer()
         rospy.Subscriber(self.opts.wr_lidar_sub_topic, LaserScan, self.msgbuf_callback_factory('wr_lidar', self.extract_wr_lidar), queue_size=2)
-        rospy.Subscriber(self.opts.lower_img_sub_topic, CompressedImage, self.msgbuf_callback_factory('lower_img', self.extract_img), queue_size=1)
+        rospy.Subscriber(self.opts.lower_img_sub_topic, CompressedImage, self.msgbuf_callback_factory('lower_img', self.extract_img), queue_size=2)
         rospy.Subscriber(self.opts.lower_box_sub_topic, BBoxArray, self.msgbuf_callback_factory('lower_box', self.extract_bbox_array), queue_size=10)
-        self.am = utils.AverageMeter()
 
     def msgbuf_callback_factory(self, msg_key, extract):
         def callback(msg):
             msg.header.stamp = rospy.get_rostime()
+            #t1 = time()
             self.msgbuf[msg_key].append(Namespace(header=msg.header, data=extract(msg)))
+            #self.am.update(time()-t1)
         return callback
         
     def extract_wr_lidar(self, laser_msg):
@@ -90,10 +95,8 @@ class FusionDumpsterDetectorNode:
         return None
 
     def fusion_detect(self, vehicle_speed, lower_bboxes, point_cloud, lower_img_raw):
-        result = easydict.EasyDict()
-        result.dynamic_detected = vehicle_speed > self.opts.speed_threshold
-        self.timer.count()
-        return result
+        self.detect_results.vehicle_speed = vehicle_speed
+        self.detect_results.dynamic_detected = vehicle_speed > self.opts.speed_threshold
     
     def scr_monitor_msgbuf(self, scr):
         scr.addstr(2, 4, "=== Messages ===")
@@ -101,10 +104,15 @@ class FusionDumpsterDetectorNode:
             scr.addstr(i+3, 4, "[%s:\t%03d]" % (k, len(buf)))
 
     def scr_monitor_timer(self, scr):
-        if self.timer.msec() is None: return
-        scr.addstr(2, 30, "=== Timer ===")
-        scr.addstr(3, 30, "[msec = %.2f]" % self.timer.msec())
-        scr.addstr(4, 30, "[fps  = %.2f]" % self.timer.fps())
+        scr.addstr(2, 30, "=== Timer/[msec] ===")
+        scr.addstr(3, 30, "[fusion_synced = %s]" % self.fusion_synced_timer.fmt_msec())
+        scr.addstr(4, 30, "[fusion_detect = %s]" % self.fusion_detect_timer.fmt_msec())
+        scr.addstr(5, 30, "[vspeed_detect = %s]" % self.vspeed_detect_timer.fmt_msec())
+
+    def scr_monitor_results(self, scr):
+        scr.addstr(2, 64, "=== Results ===")
+        for i, (k, buf) in enumerate(self.detect_results.items()):
+            scr.addstr(i+3, 4, "[%s:\t%.2f]" % (k, len(buf)))
     
     def spin_once(self, scr):
         self.scr_monitor_msgbuf(scr)
@@ -112,36 +120,45 @@ class FusionDumpsterDetectorNode:
         # sync messages to latest point_cloud frame.
         latest_point_cloud_msg = self.msgbuf.wr_lidar[-1]
         if latest_point_cloud_msg is not None:
-            point_cloud = latest_point_cloud_msg.data
             synced_lower_image_msg = self.msgbuf.lower_img.find_nearest(latest_point_cloud_msg)
             synced_lower_box_msg = self.msgbuf.lower_box.find_nearest(latest_point_cloud_msg)
-            if synced_lower_image_msg is not None and synced_lower_box_msg is not None: # core routine
-                #t1 = time()
+            if synced_lower_image_msg is not None and synced_lower_box_msg is not None:
+                # messages synchronize succeeded.
+                point_cloud = latest_point_cloud_msg.data
                 lower_img_raw = synced_lower_image_msg.data
-                #self.am.update(time()-t1)
                 lower_bboxes = synced_lower_box_msg.data
-                vehicle_speed = self.speed(new_frame=lower_img_raw, new_time=synced_lower_image_msg.header.stamp.to_sec())
-                scr.addstr(10, 4, "vehicle_speed = %s    " % str(vehicle_speed))
-                result = self.fusion_detect(vehicle_speed, lower_bboxes, point_cloud, lower_img_raw) # core function
-                self.visualizer.update(lower_img_raw=lower_img_raw, dynamic_detected=result.dynamic_detected)
-            elif synced_lower_image_msg is not None: # only do image update for visualization
+                self.fusion_synced_timer.count()
+                # update vehicle_speed
+                with self.vspeed_detect_timer:
+                    self.detect_results.vehicle_speed = self.vehicle_speed(new_frame=lower_img_raw,
+                            new_time=synced_lower_image_msg.header.stamp.to_sec())
+                # start camera lidar fusion detection
+                with self.fusion_detect_timer:
+                    self.fusion_detect(self.vehicle_speed(), lower_bboxes, point_cloud, lower_img_raw)
+                # update visualization
+                self.visualizer.update(lower_img_raw=lower_img_raw, detected_results=self.detect_results)
+            elif synced_lower_image_msg is not None:
+                # synchronization failed, only do image update for visualization
                 lower_img_raw = synced_lower_image_msg.data
                 self.visualizer.update(lower_img_raw=lower_img_raw)
-            else: cv2.waitKey(1)
-        elif len(self.msgbuf.lower_img) > 1:
+            else: self.visualizer.waitKey() # keep window responsive
+        elif len(self.msgbuf.lower_img) > 2:
             oldest_lower_image_msg = self.msgbuf.lower_img[0]
             oldest_lower_image = oldest_lower_image_msg.data
+            with self.vspeed_detect_timer:
+                self.detect_results.vehicle_speed = self.vehicle_speed(new_frame=oldest_lower_image,
+                        new_time=oldest_lower_image_msg.header.stamp.to_sec())
             self.visualizer.update(lower_img_raw=oldest_lower_image)
-        else: cv2.waitKey(1)
-        #scr.addstr(11, 4, "msec1 = %s    " % str(self.am.avg))
+        else: self.visualizer.waitKey() # keep window responsive
 
 def main(scr):
-    pprint.pprint(vars(opts))
     detector = FusionDumpsterDetectorNode(opts)
+    scr.nodelay(1)
     scr.clear()
-    rate = rospy.Rate(10)
+    rate = rospy.Rate(opts.main_loop_rate)
     while not rospy.is_shutdown():
         if int(time()) % 10 == 0: scr.clear()
+        if 27 == scr.getch(): break
         detector.spin_once(scr)
         sys.stdout.flush()
         scr.refresh()
@@ -162,6 +179,8 @@ if __name__ == "__main__":
     opts.add('--lower_img_detect_frame_shape', type=lambda x:tuple(eval(eval(x))))
     opts.add('--speed_threshold', type=float, default=5)
     opts.add('--fullscreen', action='store_true', default=False)
+    opts.add('--main_loop_rate', type=int, default=25)
     # opts.add('--debug', action='store_true', help="This debug flag is used to visualize the detection results.\n")
     opts = opts.parse_args()
+    pprint.pprint(vars(opts))
     curses.wrapper(main)

@@ -36,7 +36,11 @@ class Visualizer:
         frame = self.states.lower_img_raw
 
         cv2.imshow(self.window_name, frame)
-        self.exited = 27 == cv2.waitKey(1)
-        if self.exited: cv2.destroyAllWindows()
-        
 
+        self.waitKey()
+        
+    def waitKey(self, timeout=1):
+        key = cv2.waitKey(timeout)
+        if 27 == key:
+            cv2.destroyAllWindows()
+            self.exited = True
