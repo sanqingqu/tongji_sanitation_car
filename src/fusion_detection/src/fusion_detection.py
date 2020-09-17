@@ -31,7 +31,7 @@ class FusionDumpsterDetectorNode:
         self.vehicle_speed = speed.SpeedEstimation()
         self.visualizer = visualizer.Visualizer(full_screen=self.opts.fullscreen)
         self.msgbuf = easydict.EasyDict({
-            'wr_lidar' : utils.MsgBuffer(size=1),
+            'wr_lidar' : utils.MsgBuffer(size=3),
             'lower_img' : utils.MsgBuffer(size=10),
             'lower_box' : utils.MsgBuffer(size=10),
         })
@@ -42,7 +42,7 @@ class FusionDumpsterDetectorNode:
         self.fusion_detect_timer = utils.Timer()
         self.vspeed_detect_timer = utils.Timer()
         rospy.init_node(node_name, anonymous=True)
-        rospy.Subscriber(self.opts.wr_lidar_sub_topic, LaserScan, self.msgbuf_callback_factory('wr_lidar', self.extract_wr_lidar), queue_size=2)
+        rospy.Subscriber(self.opts.wr_lidar_sub_topic, LaserScan, self.msgbuf_callback_factory('wr_lidar', self.extract_wr_lidar), queue_size=3)
         rospy.Subscriber(self.opts.lower_img_sub_topic, CompressedImage, self.msgbuf_callback_factory('lower_img', self.extract_img), queue_size=2)
         rospy.Subscriber(self.opts.lower_box_sub_topic, BBoxArray, self.msgbuf_callback_factory('lower_box', self.extract_bbox_array), queue_size=10)
 
@@ -118,7 +118,7 @@ class FusionDumpsterDetectorNode:
         self.scr_monitor_msgbuf(scr)
         self.scr_monitor_timer(scr)
         # sync messages to latest point_cloud frame.
-        latest_point_cloud_msg = self.msgbuf.wr_lidar[-1]
+        latest_point_cloud_msg = self.msgbuf.wr_lidar[0]
         if latest_point_cloud_msg is not None:
             synced_lower_image_msg = self.msgbuf.lower_img.find_nearest(latest_point_cloud_msg)
             synced_lower_box_msg = self.msgbuf.lower_box.find_nearest(latest_point_cloud_msg)
