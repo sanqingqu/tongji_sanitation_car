@@ -60,8 +60,8 @@
   <exec_depend>std_msgs</exec_depend>
 
 
-  <build_depend>wr_lidar_driver</build_depend>
-  <exec_depend>wr_lidar_driver</exec_depend>
+  <build_depend>wr_ls_udp</build_depend>
+  <exec_depend>wr_ls_udp</exec_depend>
 
   <build_depend>deepstream_vision</build_depend>
   <exec_depend>deepstream_vision</exec_depend>

@@ -1,5 +1,0 @@
-int32 x_top_left
-int32 y_top_left
-int32 x_bottom_right
-int32 y_bottom_right
-int32 label

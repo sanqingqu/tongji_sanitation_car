@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #pylint: disable=no-member
 import cv2
+import curses
 import numpy as np
 import yaml
 from scipy.spatial.transform import Rotation
@@ -13,8 +14,33 @@ def cfg_extrinsic_type(extrinsic):
     t = np.array(extrinsic.translate).reshape((3, 1))
     return Namespace(R=R, t=t)
 
+def cfg_bbox_type(bbox):
+    bbox = Namespace(**yaml.safe_load(bbox))
+    return bbox
+
 def valid_format(format_string, x, value_type, fallback_value):
     return (format_string % x) if isinstance(x, value_type) else fallback_value
+
+def pdb(scr):
+    curses.nocbreak()
+    scr.keypad(0)
+    curses.echo()
+    curses.endwin()
+    __import__('pdb').set_trace()
+
+def argmin(a):
+    return min(range(len(a)), key=lambda x: a[x])
+
+def argmax(a):
+    return max(range(len(a)), key=lambda x: a[x])
+
+def bbox_distance(bbox1, bbox2):
+    diff = np.array([
+        bbox1.x_top_left - bbox2.x_top_left,
+        bbox1.y_top_left - bbox2.y_top_left,
+        bbox1.x_bottom_right - bbox2.x_bottom_right,
+        bbox1.y_bottom_right - bbox2.y_bottom_right])
+    return np.linalg.norm(diff)
 
 class ImageCropper:
 
@@ -25,13 +51,17 @@ class ImageCropper:
     def __call__(self, frame):
         return cv2.remap(frame, self.map1, self.map2, cv2.INTER_LINEAR)
 
-class BBoxReverter:
+class BBoxTransformer:
 
     def __init__(self, camera_mat, new_camera_mat):
-        pass
+        self.mat = np.matmul(new_camera_mat.reshape((3, 3)), np.linalg.inv(camera_mat.reshape((3, 3)))).reshape((1, 3, 3))
 
     def __call__(self, bbox):
-        pass
+        coord = np.array([[bbox.x_top_left, bbox.y_top_left, 1.], [bbox.x_bottom_right, bbox.y_bottom_right, 1.]]).reshape((2, 3, 1))
+        coord = np.matmul(self.mat, coord)
+        bbox.x_top_left, bbox.y_top_left, bbox.x_bottom_right, bbox.y_bottom_right = \
+                coord[0, 0, 0], coord[0, 1, 0], coord[1, 0, 0], coord[1, 1, 0]
+        return bbox
 
 class Timer:
 
@@ -120,3 +150,17 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
+class MedianMeter:
+
+    def __init__(self):
+        self.reset()
+    
+    def reset(self):
+        self.raw = []
+    
+    def update(self, val):
+        self.raw.append(val)
+    
+    def value(self):
+        return np.median(self.raw).item()

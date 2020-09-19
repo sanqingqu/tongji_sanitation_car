@@ -12,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  wr_lidar_driver
+  wr_ls_udp
   deepstream_vision
 )
 
@@ -53,9 +53,6 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   DumpsterInfo.msg
-  DumpsterLoc.msg
-  DumpsterLocArray.msg
-  DumpsterCAN.msg
 )
 
 ## Generate services in the 'srv' folder

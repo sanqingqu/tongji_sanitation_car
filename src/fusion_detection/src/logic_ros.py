@@ -4,7 +4,7 @@ import rospy
 from std_msgs.msg import String
 from std_msgs.msg import Bool
 from port_serial.msg import DumpsterCAN
-from yolo_detect_pkg.msg import BBoxArray
+from deepstream_vision.msg import BBoxArray
 #转换中文需要用到
 from PIL import Image, ImageDraw, ImageFont
 import numpy

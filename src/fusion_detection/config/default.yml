@@ -1,6 +1,11 @@
-lidar_to_lower_extrinsics: { axis: 'zyz', degrees: [4.5, -90, 90], translate: [0, -0.1, -0.025] }
+lidar_to_lower_extrinsics: { axis: 'zyz', degrees: [7, -90, 90], translate: [0, -0.1, -0.025] }
 lower_img_intrinsics: "[[367.05 * 0.5, 0.0, 990.63 * 0.5], [0.0, 366.74 * 0.5, 575.12 * 0.5], [0.0, 0.0, 1.0]]"
 lower_img_detect_intrinsics: "[[200.0, 0.0, 416.0 * 0.5], [0.0, 200.0, 416.0 * 0.5], [0.0, 0.0, 1.0]]"
 lower_img_detect_frame_shape: "[416, 416]"
+main_loop_rate: 30
 speed_threshold: 5
-main_loop_rate: 50
+trashbin_threshold: 0.95
+trashbin_tracking_count_threshold: 4
+trashbin_tracking_distance_threshold: 20
+trashbin_roi_bbox: { x_top_left: 320, y_top_left: 50, x_bottom_right: 640, y_bottom_right: 490 }
+trashbin_nearest_dist_upper_bound: 1.5 

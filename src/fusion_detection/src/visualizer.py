@@ -8,11 +8,16 @@ import easydict
 
 class Visualizer:
 
-    def __init__(self, screen_id = 0, window_name="TJSAN", full_screen=False):
+    CANDIDATE_TRASHBIN_COLOR = (0, 165, 255) # orange
+    BESTVALID_TRASHBIN_COLOR = (0, 255, 0)   # green
+    ROI_BOUNDING_BOX_COLOR = (0, 0, 255) # red
+
+    def __init__(self, screen_id = 0, window_name="TJSAN", full_screen=False, roi=None):
 
         self.screen_id = screen_id
         self.window_name = window_name
         self.screen = screeninfo.get_monitors()[self.screen_id]
+        self.roi = self._extract_bbox(roi) if roi else None
 
         if full_screen:
             cv2.namedWindow(self.window_name, cv2.WND_PROP_FULLSCREEN)
@@ -30,13 +35,30 @@ class Visualizer:
         
         self.render()
         
-    def render(self):
+    def render(self, show_image_bin_points=True):
         if self.exited: return
 
-        frame = self.states.lower_img_raw
+        if 'lower_img_raw' in self.states:
+            frame = self.states.lower_img_raw
+        
+        if 'detect_results' in self.states:
+            for bbox in self.states.detect_results.cand_trash_boxes:
+                top_left, bottom_right = self._extract_bbox(bbox)
+                cv2.rectangle(frame, top_left, bottom_right, self.CANDIDATE_TRASHBIN_COLOR, 2)
+            best_valid_trashbin = self.states.detect_results.best_valid_trashbin
+            if best_valid_trashbin is not None:
+                top_left, bottom_right = self._extract_bbox(best_valid_trashbin)
+                cv2.rectangle(frame, top_left, bottom_right, self.BESTVALID_TRASHBIN_COLOR, 2)
+            if show_image_bin_points:
+                image_bin_points = self.states.detect_results.image_bin_points
+                if image_bin_points is not None:
+                    for point in image_bin_points:
+                        cv2.circle(frame, (point[0], point[1]), 6, (0, 0, 255), -1)
+            if self.roi is not None:
+                top_left, bottom_right = self.roi
+                cv2.rectangle(frame, top_left, bottom_right, self.ROI_BOUNDING_BOX_COLOR, 2)
 
         cv2.imshow(self.window_name, frame)
-
         self.waitKey()
         
     def waitKey(self, timeout=1):
@@ -44,3 +66,8 @@ class Visualizer:
         if 27 == key:
             cv2.destroyAllWindows()
             self.exited = True
+
+    def _extract_bbox(self, bbox):
+        top_left = (int(round(bbox.x_top_left)), int(round(bbox.y_top_left)))
+        bottom_right = (int(round(bbox.x_bottom_right)),int(round(bbox.y_bottom_right)))
+        return top_left, bottom_right

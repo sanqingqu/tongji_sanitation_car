@@ -1,7 +1,8 @@
 Header header
-int32 continuous_dumpster
+bool continuous_dumpster
+bool emergency_stop
 float32 lateral_dis
 float32 side_offset
 float32 object_width
-int32 left_gap
-int32 right_gap
+float32 left_gap
+float32 right_gap
