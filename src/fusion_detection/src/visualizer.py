@@ -31,6 +31,7 @@ class Visualizer:
     def update(self, **kwargs):
 
         for k, v in kwargs.items():
+            if v is None: continue
             self.states[k] = v
         
         self.render()
@@ -40,6 +41,8 @@ class Visualizer:
 
         if 'lower_img_raw' in self.states:
             frame = self.states.lower_img_raw
+        else:
+            frame = np.ones((1920, 1080, 3), dtype=np.uint8) * 127
         
         if 'detect_results' in self.states:
             for bbox in self.states.detect_results.cand_trash_boxes:
@@ -57,6 +60,15 @@ class Visualizer:
             if self.roi is not None:
                 top_left, bottom_right = self.roi
                 cv2.rectangle(frame, top_left, bottom_right, self.ROI_BOUNDING_BOX_COLOR, 2)
+
+            if 'upper_img_raw' in self.states and self.states.upper_img_raw is not None:
+                for bbox in self.states.detect_results.cand_human_boxes:
+                    top_left, bottom_right = self._extract_bbox(bbox)
+                    cv2.rectangle(self.states.upper_img_raw, top_left, bottom_right, self.CANDIDATE_TRASHBIN_COLOR, 2)
+
+        if 'upper_img_raw' in self.states and self.states.upper_img_raw is not None:
+            upper_img = cv2.resize(self.states.upper_img_raw, None, fx=0.25, fy=0.25)
+            frame[:upper_img.shape[0]:, -upper_img.shape[1]:] = upper_img
 
         cv2.imshow(self.window_name, frame)
         self.waitKey()

@@ -39,6 +39,8 @@ class FusionDumpsterDetectorNode:
             'wr_lidar' : utils.MsgBuffer(size=3),
             'lower_img' : utils.MsgBuffer(size=10),
             'lower_box' : utils.MsgBuffer(size=10),
+            'upper_img' : utils.MsgBuffer(size=10),
+            'upper_box' : utils.MsgBuffer(size=10),
         })
         self.detect_results = easydict.EasyDict({
             "vehicle_speed" : speed.SpeedEstimation(),
@@ -47,8 +49,9 @@ class FusionDumpsterDetectorNode:
             "latest_binbox" : None,
             "nearest_dist" : None,
             "trashbin_width" : utils.MedianMeter(),
+            "human_detectd" : 0,
         })
-        self.visualizable_results_keys = ["vehicle_speed", "dynamic_detected", "bin_track_cnt", "nearest_dist", "bin_point_cnt"]
+        self.visualizable_results_keys = ["vehicle_speed", "dynamic_detected", "bin_track_cnt", "nearest_dist", "bin_point_cnt", "human_detectd"]
         self.mainloop_rate_timer = utils.Timer()
         self.fusion_synced_timer = utils.Timer()
         self.fusion_detect_timer = utils.Timer()
@@ -58,6 +61,8 @@ class FusionDumpsterDetectorNode:
         rospy.Subscriber(self.opts.wr_lidar_sub_topic, LaserScan, self.msgbuf_callback_factory('wr_lidar', self.extract_wr_lidar), queue_size=3)
         rospy.Subscriber(self.opts.lower_img_sub_topic, CompressedImage, self.msgbuf_callback_factory('lower_img', self.extract_img), queue_size=3)
         rospy.Subscriber(self.opts.lower_box_sub_topic, BBoxArray, self.msgbuf_callback_factory('lower_box', self.extract_bbox_array), queue_size=3)
+        rospy.Subscriber(self.opts.upper_img_sub_topic, CompressedImage, self.msgbuf_callback_factory('upper_img', self.extract_img), queue_size=3)
+        rospy.Subscriber(self.opts.upper_box_sub_topic, BBoxArray, self.msgbuf_callback_factory('upper_box', self.extract_bbox_array), queue_size=3)
         self.dumpster_detect_publisher = rospy.Publisher(self.opts.dumpster_pub_topic, DumpsterInfo, queue_size=1)
 
     def pdb(self):
@@ -145,12 +150,15 @@ class FusionDumpsterDetectorNode:
         dumpster_msg.lateral_dis = self.detect_results.nearest_dist
         dumpster_msg.side_offset = - nearest_x.mean().item()
         dumpster_msg.object_width = self.detect_results.trashbin_width.value()
-        dumpster_msg.left_gap = (nearest_x.min() - left_trashbin_points[:, 1, 0].max()) if left_trashbin_points is not None else 1.0
-        dumpster_msg.right_gap = (right_trashbin_points[:, 1, 0].min() - nearest_x.max()) if right_trashbin_points is not None else 1.0
+        dumpster_msg.left_gap = (left_trashbin_points[:, 1, 0].min() - nearest_x.max()) if left_trashbin_points is not None else 1.0
+        dumpster_msg.right_gap = (nearest_x.min() - right_trashbin_points[:, 1, 0].max()) if right_trashbin_points is not None else 1.0
         return dumpster_msg
 
-    def compose_emergency_stop_message(self, detect_results):
-        pass
+    def compose_emergency_stop_message(self):
+        dumpster_msg = DumpsterInfo()
+        dumpster_msg.header.stamp = rospy.Time.now()
+        dumpster_msg.emergency_stop = True
+        return dumpster_msg
     
     def bin_points_in_box(self, point_cloud, bbox):
         x, y = point_cloud["image"][:, 0], point_cloud["image"][:, 1]
@@ -163,7 +171,7 @@ class FusionDumpsterDetectorNode:
         selector[selector] = largest_cluster
         return selector
 
-    def fusion_detect_trashbin(self, vehicle_speed, lower_bboxes, point_cloud, lower_img_raw):
+    def fusion_detect_trashbin(self, vehicle_speed, lower_bboxes, upper_bboxes, point_cloud, lower_img_raw):
         # get all candidates trash bin and their points.
         self.detect_results.cand_trash_boxes = [bbox for bbox in lower_bboxes
                 if bbox.class_id in [1, 3] and bbox.score > self.opts.trashbin_threshold]
@@ -181,9 +189,24 @@ class FusionDumpsterDetectorNode:
             if not trashbin_in_roi: nearest_trashbin = None
             self.detect_results.nearest_trashbin_id = nearest_trashbin_id
         # disable nearest_trashbin when dynamic_detected
+        self.detect_results.dynamic_detected = vehicle_speed > self.opts.speed_threshold
         if not self.opts.disable_dynamic_filter:
-            self.detect_results.dynamic_detected = vehicle_speed > self.opts.speed_threshold
             if self.detect_results.dynamic_detected: nearest_trashbin = None
+        # disable nearest_trashbin when human detected
+        if not self.opts.disable_human_detection:
+            self.detect_results.cand_human_boxes = [bbox for bbox in upper_bboxes
+                    if bbox.class_id in [0] and bbox.score > self.opts.human_threshold and 
+                    bbox.y_bottom_right > 250] 
+            self.detect_results.hazard_human_boxes = [bbox for bbox in self.detect_results.cand_human_boxes
+                    if bbox.x_top_left > self.opts.trashbin_roi_bbox.x_top_left and \
+                    bbox.x_bottom_right < self.opts.trashbin_roi_bbox.x_bottom_right]
+            if len(self.detect_results.hazard_human_boxes) > 0: self.detect_results.human_detectd = 10
+            elif self.detect_results.human_detectd > 0: self.detect_results.human_detectd -= 1
+            else: pass
+            if not self.detect_results.dynamic_detected and self.detect_results.human_detectd > 0:
+                emergency_stop_message = self.compose_emergency_stop_message()
+                self.dumpster_detect_publisher.publish(emergency_stop_message)
+                nearest_trashbin = None
         # disable nearest_trashbin when no corresponding point cloud in box
         if nearest_trashbin is not None:
             nearest_selector = self.detect_results.cand_trash_selectors[nearest_trashbin_id]
@@ -254,21 +277,25 @@ class FusionDumpsterDetectorNode:
             # sync messages to latest point_cloud frame.
             synced_lower_image_msg = self.msgbuf.lower_img.find_nearest(oldest_point_cloud_msg)
             synced_lower_box_msg = self.msgbuf.lower_box.find_nearest(oldest_point_cloud_msg)
+            synced_upper_image_msg = self.msgbuf.upper_img.find_nearest(oldest_point_cloud_msg)
+            synced_upper_box_msg = self.msgbuf.upper_box.find_nearest(oldest_point_cloud_msg)
             if synced_lower_image_msg is not None and synced_lower_box_msg is not None:
                 # messages synchronize succeeded.
                 point_cloud = oldest_point_cloud_msg.data
                 lower_img_raw = synced_lower_image_msg.data
                 lower_bboxes = synced_lower_box_msg.data
+                upper_img_raw = synced_upper_image_msg.data if synced_upper_image_msg else None
+                upper_bboxes = synced_upper_box_msg.data if synced_upper_box_msg else []
                 self.fusion_synced_timer.count()
                 # update vehicle_speed
                 with self.vspeed_detect_timer:
                     self.detect_results.vehicle_speed(new_frame=lower_img_raw, new_time=synced_lower_image_msg.header.stamp.to_sec())
                 # start camera lidar fusion detection
                 with self.fusion_detect_timer:
-                    self.fusion_detect_trashbin(self.detect_results.vehicle_speed(), lower_bboxes, point_cloud, lower_img_raw)
+                    self.fusion_detect_trashbin(self.detect_results.vehicle_speed(), lower_bboxes, upper_bboxes, point_cloud, lower_img_raw)
                 # update visualization
                 with self.visual_update_timer:
-                    self.visualizer.update(lower_img_raw=lower_img_raw, detect_results=self.detect_results)
+                    self.visualizer.update(lower_img_raw=lower_img_raw, upper_img_raw=upper_img_raw, detect_results=self.detect_results)
             elif synced_lower_image_msg is not None:
                 # synchronization failed, only do image update for visualization
                 lower_img_raw = synced_lower_image_msg.data
@@ -278,10 +305,12 @@ class FusionDumpsterDetectorNode:
         elif len(self.msgbuf.lower_img) > 5:
             oldest_lower_image_msg = self.msgbuf.lower_img[0]
             oldest_lower_image = oldest_lower_image_msg.data
+            synced_upper_image_msg = self.msgbuf.upper_img.find_nearest(oldest_lower_image_msg)
+            upper_img_raw = synced_upper_image_msg.data if synced_upper_image_msg else None
             with self.vspeed_detect_timer:
                 self.detect_results.vehicle_speed(new_frame=oldest_lower_image, new_time=oldest_lower_image_msg.header.stamp.to_sec())
             with self.visual_update_timer:
-                self.visualizer.update(lower_img_raw=oldest_lower_image)
+                self.visualizer.update(lower_img_raw=oldest_lower_image, upper_img_raw=upper_img_raw)
         else: self.visualizer.waitKey() # keep window responsive
         self.scr_monitor_results()
 
@@ -305,7 +334,7 @@ if __name__ == "__main__":
     opts.add('--upper_img_sub_topic', default="/undistort_upper/compressed", help="default: %(default)s")
     opts.add('--wr_lidar_sub_topic', default="/wr_scan", help="default: %(default)s")
     opts.add('--lower_box_sub_topic', default="/yolo_detect_lower/bbox_results", help="default:%(default)s")
-    opts.add('--upper_boxes_sub_topic', default="/yolo_detect_upper/bbox_results", help="default:%(default)s")
+    opts.add('--upper_box_sub_topic', default="/yolo_detect_upper/bbox_results", help="default:%(default)s")
     opts.add('--dumpster_pub_topic', default="/dumpster_detection/dumpster_location", help="default: %(default)s")
     opts.add('--lidar_to_lower_extrinsics', type=utils.cfg_extrinsic_type)
     opts.add('--lower_img_intrinsics', type=lambda x:np.array(eval(eval(x))))
@@ -314,8 +343,10 @@ if __name__ == "__main__":
     opts.add('--speed_threshold', type=float, default=5)
     opts.add('--fullscreen', action='store_true', default=False)
     opts.add('--disable_dynamic_filter', action='store_true', default=False)
+    opts.add('--disable_human_detection', action='store_true', default=False)
     opts.add('--main_loop_rate', type=int, default=25)
     opts.add('--trashbin_threshold', type=float, default=0.98)
+    opts.add('--human_threshold', type=float, default=0.8)
     opts.add('--trashbin_roi_bbox', type=utils.cfg_bbox_type)
     opts.add('--trashbin_tracking_count_threshold', type=float, default=8)
     opts.add('--trashbin_tracking_distance_threshold', type=float, default=20)

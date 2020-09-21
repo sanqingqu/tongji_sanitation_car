@@ -5,6 +5,7 @@ lower_img_detect_frame_shape: "[416, 416]"
 main_loop_rate: 30
 speed_threshold: 5
 trashbin_threshold: 0.95
+human_threshold: 0.1
 trashbin_tracking_count_threshold: 4
 trashbin_tracking_distance_threshold: 20
 trashbin_roi_bbox: { x_top_left: 320, y_top_left: 50, x_bottom_right: 640, y_bottom_right: 490 }
