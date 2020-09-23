@@ -32,7 +32,7 @@ class FusionDumpsterDetectorNode:
         self.lower_reverter = utils.BBoxTransformer(
             self.opts.lower_img_detect_intrinsics,
             self.opts.lower_img_intrinsics)
-        self.dumpster_fit = dumpster_fitting.DumpsterFitter()
+        #self.dumpster_fit = dumpster_fitting.DumpsterFitter()
         self.visualizer = visualizer.Visualizer(
                 full_screen=self.opts.fullscreen, roi=self.opts.trashbin_roi_bbox)
         self.msgbuf = easydict.EasyDict({

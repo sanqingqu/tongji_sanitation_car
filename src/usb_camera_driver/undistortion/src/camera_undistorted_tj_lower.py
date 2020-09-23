@@ -26,15 +26,16 @@ camera_mat = np.array([[367.0543074903704, 0.0, 990.6330750325744], [0.0, 366.73
 dist_coeff = np.array([[0.06062150734934245], [-0.008279891153400248], [-0.0012545281813805395], [-0.0010038515782001421]])
 new_camera_mat = np.array([[367.0543074903704 * 0.5, 0.0, 990.6330750325744 * 0.5], [0.0, 366.7370079611347 * 0.5, 575.1183044201284 * 0.5], [0.0, 0.0, 1.0]])
 
-cap = cv2.VideoCapture(int(sys.argv[1]) if len(sys.argv) > 1 else 0)
+#cap = cv2.VideoCapture(int(sys.argv[1]) if len(sys.argv) > 1 else 0)
+cap = cv2.VideoCapture("v4l2src device=/dev/video0 ! image/jpeg, width=1920, height=1080, format=MJPG, framerate=30/1 ! jpegdec ! videoconvert ! appsink", cv2.CAP_GSTREAMER)
 assert cap.isOpened(), "capture open failed"
-(cap.set(cv2.CAP_PROP_FPS, 20))
-(cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920))
-(cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080))
-(cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M','J','P','G')))
-(cap.set(cv2.CAP_PROP_GAIN, 0.4))
-(cap.set(cv2.CAP_PROP_BRIGHTNESS, 0))
-(cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.75)) # 0.25 mannual, 0.75 auto
+#(cap.set(cv2.CAP_PROP_FPS, 20))
+#(cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920))
+#(cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080))
+#(cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M','J','P','G')))
+#(cap.set(cv2.CAP_PROP_GAIN, 0.4))
+#(cap.set(cv2.CAP_PROP_BRIGHTNESS, 0))
+#(cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.75)) # 0.25 mannual, 0.75 auto
 #(cap.set(cv2.CAP_PROP_EXPOSURE, 0.5))
 
 frame_shape = None
@@ -54,9 +55,9 @@ def undistort(frame):
 def ros_main(raw=False, compressed=False, resized=True, viz=False):
   img_pub_raw = rospy.Publisher('/undistort_lower', Image, queue_size = 2)
   img_pub_compressed = rospy.Publisher('/undistort_lower/compressed', CompressedImage, queue_size = 2)
-  img_pub_resized = rospy.Publisher('/undistort_lower_resized', Image, queue_size = 2)
+  #img_pub_resized = rospy.Publisher('/undistort_lower_resized', Image, queue_size = 2)
   rospy.init_node('undistort_lower', anonymous=True)
-  rate = rospy.Rate(20)
+  rate = rospy.Rate(10)
   while not rospy.is_shutdown():
     ok, raw_frame = cap.read()
     timestamp = rospy.Time.now()
@@ -114,6 +115,7 @@ def cv_main():
 if __name__ == '__main__':
   #cv_main()
   try:
-    ros_main(raw=False, compressed=True, resized=True, viz=True)
+    ros_main(raw=False, compressed=True, resized=False, viz=False)
   except rospy.ROSInterruptException:
-    pass
+    cap.release()
+
