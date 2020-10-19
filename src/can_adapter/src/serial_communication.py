@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 ENABLE_SERIAL = True
 
 import numpy as np
@@ -33,24 +32,27 @@ def thread_job():
     rospy.spin()
 
 def callback(data):
-    byte_0 = np.uint8((1<<6) if data.continuous_dumpster else 0 + (1<<7) if data.emergency_stop else 0).tobytes()
-    byte_1 = np.uint8(clamp(round(data.lateral_dis * 1000 / 4), 0, 255)).tobytes()
+    byte_0 = np.uint8((1<<1) if data.continuous_dumpster else 0 + (0<<0) if data.emergency_stop else 0).tobytes()
+    byte_1 = np.uint8(clamp(round(data.lateral_dis * 1000 / 6), 0, 255)).tobytes()
     byte_23 = np.float16(data.side_offset ).newbyteorder('<').tobytes()
     byte_45 = np.float16(data.object_width).newbyteorder('<').tobytes()
-    byte_6 = np.uint8(clamp(round(data.left_gap  * 1000 / 4), 0, 255)).tobytes()
-    byte_7 = np.uint8(clamp(round(data.right_gap * 1000 / 4), 0, 255)).tobytes()
+    byte_6 = np.uint8(clamp(round(data.left_gap  * 1000 / 6), 0, 255)).tobytes()
+    byte_7 = np.uint8(clamp(round(data.right_gap * 1000 / 6), 0, 255)).tobytes()
     #byte_8 = 
     can_msg = b''.join([byte_0, byte_1, byte_23, byte_45, byte_6, byte_7])
-    for i in can_msg: print(hex(ord(i))),
-    print('')
-    if ENABLE_SERIAL:
-        ser.write(can_msg)
-        ser.write('/n')
+    ser.write(can_msg)
+    for i in can_msg: 
+        print(hex(ord(i)))
+    #print('')
+    #if ENABLE_SERIAL:
+    #    ser.write(can_msg)
+        #ser.write('/n')
 
 def main():
     rospy.init_node('serial_data_control', anonymous=True)
     pub = rospy.Publisher('control_msg', String, queue_size=3)
-    rospy.Subscriber('/dumpster_detection/dumpster_location', DumpsterInfo, callback) 
+    #time.sleep(20)
+    rospy.Subscriber('/dumpster_detection/dumpster_location', DumpsterInfo, callback)
     #if ENABLE_SERIAL:
     #    ser = open_first_serial_device()
     #print(ser)

@@ -1,0 +1,1 @@
+cmd_/home/zhgz/Desktop/tongji_sanitation_car/CH341SER_LINUX/built-in.o :=  rm -f /home/zhgz/Desktop/tongji_sanitation_car/CH341SER_LINUX/built-in.o; ar rcsD /home/zhgz/Desktop/tongji_sanitation_car/CH341SER_LINUX/built-in.o

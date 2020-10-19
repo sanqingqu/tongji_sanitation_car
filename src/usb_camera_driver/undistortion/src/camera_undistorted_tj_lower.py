@@ -57,7 +57,7 @@ def ros_main(raw=False, compressed=False, resized=True, viz=False):
   img_pub_compressed = rospy.Publisher('/undistort_lower/compressed', CompressedImage, queue_size = 2)
   #img_pub_resized = rospy.Publisher('/undistort_lower_resized', Image, queue_size = 2)
   rospy.init_node('undistort_lower', anonymous=True)
-  rate = rospy.Rate(10)
+  rate = rospy.Rate(8)
   while not rospy.is_shutdown():
     ok, raw_frame = cap.read()
     timestamp = rospy.Time.now()

@@ -9,7 +9,6 @@
 
   <!-- Start fusion detection! -->
   <node pkg = "fusion_detection" name = "fusion_detection_main" type = "fusion_detection_main.py" args = "-c /home/zhgz/Desktop/tongji_sanitation_car/src/fusion_detection/config/default.yml --disable_dynamic_filter" output = "screen" />
-
   <!-- Start CAN! -->
   <node pkg = "can_adapter" name = "serial_communication" type = "serial_communication.py" output = "screen" />
 </launch>

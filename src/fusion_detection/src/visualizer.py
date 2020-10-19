@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 import screeninfo
 import easydict
+import copy
 
 class Visualizer:
 
@@ -45,28 +46,29 @@ class Visualizer:
             frame = np.ones((1920, 1080, 3), dtype=np.uint8) * 127
         
         if 'detect_results' in self.states:
-            for bbox in self.states.detect_results.cand_trash_boxes:
-                top_left, bottom_right = self._extract_bbox(bbox)
-                cv2.rectangle(frame, top_left, bottom_right, self.CANDIDATE_TRASHBIN_COLOR, 2)
-            best_valid_trashbin = self.states.detect_results.best_valid_trashbin
-            if best_valid_trashbin is not None:
-                top_left, bottom_right = self._extract_bbox(best_valid_trashbin)
-                cv2.rectangle(frame, top_left, bottom_right, self.BESTVALID_TRASHBIN_COLOR, 2)
-            if show_image_bin_points:
-                image_bin_points = self.states.detect_results.image_bin_points
-                if image_bin_points is not None:
-                    for point in image_bin_points:
-                        cv2.circle(frame, (point[0], point[1]), 6, (0, 0, 255), -1)
-            if self.roi is not None:
-                top_left, bottom_right = self.roi
-                cv2.rectangle(frame, top_left, bottom_right, self.ROI_BOUNDING_BOX_COLOR, 2)
-
-            if 'upper_img_raw' in self.states and self.states.upper_img_raw is not None:
-                for bbox in self.states.detect_results.cand_human_boxes:
+            try:
+                for bbox in self.states.detect_results.cand_trash_boxes:
                     top_left, bottom_right = self._extract_bbox(bbox)
-                    cv2.rectangle(self.states.upper_img_raw, top_left, bottom_right, self.CANDIDATE_TRASHBIN_COLOR, 2)
+                    cv2.rectangle(frame, top_left, bottom_right, self.CANDIDATE_TRASHBIN_COLOR, 2)
+                best_valid_trashbin = self.states.detect_results.best_valid_trashbin
+                if best_valid_trashbin is not None:
+                    top_left, bottom_right = self._extract_bbox(best_valid_trashbin)
+                    cv2.rectangle(frame, top_left, bottom_right, self.BESTVALID_TRASHBIN_COLOR, 2)
+                if show_image_bin_points:
+                    image_bin_points = self.states.detect_results.image_bin_points
+                    if image_bin_points is not None:
+                        for point in image_bin_points:
+                            cv2.circle(frame, (point[0], point[1]), 6, (0, 0, 255), -1)
+                if self.roi is not None:
+                    top_left, bottom_right = self.roi
+                    cv2.rectangle(frame, top_left, bottom_right, self.ROI_BOUNDING_BOX_COLOR, 2)
+            except: pass
 
-        if 'upper_img_raw' in self.states and self.states.upper_img_raw is not None:
+        if 'upper_img_raw' in self.states and self.states.upper_img_raw is not None and \
+           'detect_results' in self.states and 'cand_human_boxes' in self.states.detect_results and self.states.detect_results.cand_human_boxes is not None:
+            for bbox in self.states.detect_results.cand_human_boxes:
+                top_left, bottom_right = self._extract_bbox(bbox)
+                cv2.rectangle(self.states.upper_img_raw, top_left, bottom_right, self.CANDIDATE_TRASHBIN_COLOR, 4)
             upper_img = cv2.resize(self.states.upper_img_raw, None, fx=0.25, fy=0.25)
             frame[:upper_img.shape[0]:, -upper_img.shape[1]:] = upper_img
 

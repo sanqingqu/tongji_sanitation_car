@@ -67,7 +67,7 @@ def ros_main(raw=False, compressed=False, resized=True, viz=False):
   #img_pub_resized = rospy.Publisher('/undistort_upper_resized', Image, queue_size = 2)
   rospy.init_node('undistort_upper', anonymous=True)
   bridge = CvBridge()
-  rate = rospy.Rate(10)
+  rate = rospy.Rate(8)
   while not rospy.is_shutdown():
     ok, raw_frame = cap.read()
     timestamp = rospy.Time.now()

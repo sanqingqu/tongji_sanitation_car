@@ -1,0 +1,1 @@
+cmd_/home/zhgz/Desktop/tongji_sanitation_car/CH341SER_LINUX/ch34x.ko := ld -EL -r  -T ./scripts/module-common.lds -T ./arch/arm64/kernel/module.lds --build-id  -o /home/zhgz/Desktop/tongji_sanitation_car/CH341SER_LINUX/ch34x.ko /home/zhgz/Desktop/tongji_sanitation_car/CH341SER_LINUX/ch34x.o /home/zhgz/Desktop/tongji_sanitation_car/CH341SER_LINUX/ch34x.mod.o ;  true
