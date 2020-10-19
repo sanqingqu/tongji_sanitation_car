@@ -60,6 +60,11 @@ def ros_main(raw=False, compressed=False, resized=True, viz=False):
   rate = rospy.Rate(10)
   while not rospy.is_shutdown():
     ok, raw_frame = cap.read()
+    if not ok:
+      print("camera read ok: ", ok)
+      rate.sleep()
+      continue
+
     timestamp = rospy.Time.now()
     undist_frame = undistort(raw_frame)
 
