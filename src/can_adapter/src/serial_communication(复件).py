@@ -39,20 +39,18 @@ def callback(data):
     byte_45 = np.float16(data.object_width).newbyteorder('<').tobytes()
     byte_6 = np.uint8(clamp(round(data.left_gap  * 1000 / 4), 0, 255)).tobytes()
     byte_7 = np.uint8(clamp(round(data.right_gap * 1000 / 4), 0, 255)).tobytes()
-    #byte_8 = 
     can_msg = b''.join([byte_0, byte_1, byte_23, byte_45, byte_6, byte_7])
     for i in can_msg: print(hex(ord(i))),
     print('')
     if ENABLE_SERIAL:
         ser.write(can_msg)
-        ser.write('/n')
 
 def main():
     rospy.init_node('serial_data_control', anonymous=True)
     pub = rospy.Publisher('control_msg', String, queue_size=3)
     rospy.Subscriber('/dumpster_detection/dumpster_location', DumpsterInfo, callback) 
-    #if ENABLE_SERIAL:
-    #    ser = open_first_serial_device()
+    if ENABLE_SERIAL:
+        ser = open_first_serial_device()
     #print(ser)
     rate = rospy.Rate(100) 
     add_thread = threading.Thread(target = thread_job)
@@ -69,5 +67,4 @@ def main():
         rate.sleep()
 
 if __name__ == '__main__':
-    ser = open_first_serial_device()
     main()
