@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!-- Start upper camera! -->
+  <node pkg = "undistortion" name = "camera_undistorted_tj_upper" type = "camera_undistorted_tj_upper.py" output = "screen" />
+
+  <!-- Start YOLO detection! -->
+  <node pkg = "deepstream_vision" name = "test_ros_nvinfer_pipeline_upper" type = "test_ros_nvinfer_pipeline" args = "/home/zhgz/Desktop/tongji_sanitation_car/src/deepstream_vision/config/pgie_yolov3_tlt_up_config.txt" output = "screen" />
+
+  <!-- Start fusion detection! -->
+  <node pkg = "fusion_detection" name = "fusion_detection_main" type = "fusion_detection_main.py" args = "-c /home/zhgz/Desktop/tongji_sanitation_car/src/fusion_detection/config/default.yml --disable_dynamic_filter" output = "screen" />
+  <!-- Start CAN! -->
+  <node pkg = "can_adapter" name = "serial_communication" type = "serial_communication.py" output = "screen" />
+</launch>

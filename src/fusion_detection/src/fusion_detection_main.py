@@ -352,6 +352,6 @@ if __name__ == "__main__":
     opts.add('--trashbin_tracking_distance_threshold', type=float, default=20)
     opts.add('--trashbin_nearest_dist_upper_bound', type=float, default=1.5)
     # opts.add('--debug', action='store_true', help="This debug flag is used to visualize the detection results.\n")
-    opts = opts.parse_args()
+    opts = opts.parse_known_args()[0]
     pprint.pprint(vars(opts))
     curses.wrapper(main)

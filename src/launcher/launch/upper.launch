@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+
+<launch>
+  <node pkg="deepstream_vision" type="test_ros_nvinfer_pipeline" respawn="true" />
+</launch>
