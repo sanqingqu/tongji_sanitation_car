@@ -41,7 +41,8 @@ def callback(data):
     byte_7 = np.uint8(clamp(round(data.right_gap * 1000 / 4), 0, 255)).tobytes()
     #byte_8 = 
     can_msg = b''.join([byte_0, byte_1, byte_23, byte_45, byte_6, byte_7])
-    for i in can_msg: print(hex(ord(i))),
+    for i in can_msg: 
+        print(hex(ord(i)))
     print('')
     if ENABLE_SERIAL:
         ser.write(can_msg)

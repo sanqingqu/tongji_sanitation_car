@@ -346,7 +346,7 @@ if __name__ == "__main__":
     opts.add('--disable_human_detection', action='store_true', default=False)
     opts.add('--main_loop_rate', type=int, default=25)
     opts.add('--trashbin_threshold', type=float, default=0.98)
-    opts.add('--human_threshold', type=float, default=0.8)
+    opts.add('--human_threshold', type=float, default=0.2)
     opts.add('--trashbin_roi_bbox', type=utils.cfg_bbox_type)
     opts.add('--trashbin_tracking_count_threshold', type=float, default=8)
     opts.add('--trashbin_tracking_distance_threshold', type=float, default=20)

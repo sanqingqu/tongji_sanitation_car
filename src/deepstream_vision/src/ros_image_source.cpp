@@ -1,6 +1,7 @@
 #include "ros_image_source.hpp"
+#include <unistd.h>
 #include <vector>
-
+//#define LOWER
 namespace cv {
 
 Mat equalizeIntensity(const Mat& inputImage)
@@ -34,6 +35,8 @@ Mat equalizeIntensity(const Mat& inputImage)
 void RosJPEGImageSource::callback(const sensor_msgs::CompressedImageConstPtr& msg)
 {
   // fprintf(stderr, "1"); fflush(0);
+  static int cnt;
+  if (++cnt % 2 == 0) {return;}
   try
   {
     std::lock_guard<std::mutex> lck (this->frame_mutex);
@@ -59,6 +62,7 @@ static gboolean feed_data_to_appsrc0(RosJPEGImageSource * cv_src) {
     do {
         std::lock_guard<std::mutex> lck (cv_src->frame_mutex);
         if (!cv_src->frame.empty()) break;
+        usleep(1000);
     }while(ros::ok());
 
     if (!ros::ok()) return FALSE;
@@ -136,16 +140,18 @@ static void init_undistortion_map(cv::Mat& map1, cv::Mat& map2) {
 static void init_undistortion_map_nodist(cv::Mat& map1, cv::Mat& map2) {
 #ifdef LOWER
   cv::Mat K = (cv::Mat_<float>(3,3) << 367.0543074903704 * 0.5, 0.0, 990.6330750325744 * 0.5, 0.0, 366.7370079611347 * 0.5, 575.1183044201284 * 0.5, 0.0, 0.0, 1.0);
+  cv::Mat P = (cv::Mat_<float>(3,3) << 150.0f, 0.0f, UNWARP_WIDTH/2.0f,
+                    0.0f, 150.0f, UNWARP_HEIGHT/2.0f, 0.0f, 0.0f, 1.0f);
 
 #elif defined UPPER
   cv::Mat K = (cv::Mat_<float>(3,3) << 367.2867502156721*0.5, 0.0, 960.8303932411943*0.5, 0.0, 369.06857590098275*0.5, 562.6211777029157*0.5, 0.0, 0.0, 1.0);
+  cv::Mat P = (cv::Mat_<float>(3,3) << 60.0f, 0.0f, UNWARP_WIDTH/2.0f,
+                    0.0f, 60.0f, UNWARP_HEIGHT/2.0f, 0.0f, 0.0f, 1.0f);
 #else
   assert(0);
 #endif
   std::vector<float> D;
   cv::Mat R = (cv::Mat_<float>(3,3) << 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-  cv::Mat P = (cv::Mat_<float>(3,3) << 200.0f, 0.0f, UNWARP_WIDTH/2.0f,
-                    0.0f, 200.0f, UNWARP_HEIGHT/2.0f, 0.0f, 0.0f, 1.0f);
   cv::Size net_input_sz(UNWARP_WIDTH, UNWARP_HEIGHT);
   cv::initUndistortRectifyMap ( K, D, R, P, net_input_sz, CV_16SC2, map1, map2 );
 }

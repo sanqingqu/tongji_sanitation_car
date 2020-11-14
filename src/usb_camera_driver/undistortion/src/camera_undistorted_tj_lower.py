@@ -22,10 +22,12 @@ from sensor_msgs.msg import CameraInfo, Image, CompressedImage
 import numpy as np
 from easydict import EasyDict
 # 1920x1080
-camera_mat = np.array([[367.0543074903704, 0.0, 990.6330750325744], [0.0, 366.7370079611347, 575.1183044201284], [0.0, 0.0, 1.0]])
-dist_coeff = np.array([[0.06062150734934245], [-0.008279891153400248], [-0.0012545281813805395], [-0.0010038515782001421]])
-new_camera_mat = np.array([[367.0543074903704 * 0.5, 0.0, 990.6330750325744 * 0.5], [0.0, 366.7370079611347 * 0.5, 575.1183044201284 * 0.5], [0.0, 0.0, 1.0]])
-
+#camera_mat = np.array([[367.0543074903704, 0.0, 990.6330750325744], [0.0, 366.7370079611347, 575.1183044201284], [0.0, 0.0, 1.0]])
+#dist_coeff = np.array([[0.06062150734934245], [-0.008279891153400248], [-0.0012545281813805395], [-0.0010038515782001421]])
+#new_camera_mat = np.array([[367.0543074903704 * 0.5, 0.0, 990.6330750325744 * 0.5], [0.0, 366.7370079611347 * 0.5, 575.1183044201284 * 0.5], [0.0, 0.0, 1.0]])
+camera_mat = np.array([[367.9930599694648, 0.0, 912.8130636660399], [0.0, 366.80781055968015, 533.2603331372758], [0.0, 0.0, 1.0]])
+dist_coeff = np.array([[0.07169366959983305], [-0.027988107682178208], [0.023004098448375098], [-0.011120328439923357]])
+new_camera_mat = np.array([[367.9930599694648 * 0.5, 0.0, 912.8130636660399 * 0.5], [0.0, 366.80781055968015 * 0.5, 533.2603331372758 * 0.5], [0.0, 0.0, 1.0]])
 #cap = cv2.VideoCapture(int(sys.argv[1]) if len(sys.argv) > 1 else 0)
 cap = cv2.VideoCapture("v4l2src device=/dev/video0 ! image/jpeg, width=1920, height=1080, format=MJPG, framerate=30/1 ! jpegdec ! videoconvert ! appsink", cv2.CAP_GSTREAMER)
 assert cap.isOpened(), "capture open failed"
@@ -57,7 +59,7 @@ def ros_main(raw=False, compressed=False, resized=True, viz=False):
   img_pub_compressed = rospy.Publisher('/undistort_lower/compressed', CompressedImage, queue_size = 2)
   #img_pub_resized = rospy.Publisher('/undistort_lower_resized', Image, queue_size = 2)
   rospy.init_node('undistort_lower', anonymous=True)
-  rate = rospy.Rate(10)
+  rate = rospy.Rate(8)
   while not rospy.is_shutdown():
     ok, raw_frame = cap.read()
     if not ok:
