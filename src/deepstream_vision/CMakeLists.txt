@@ -161,11 +161,16 @@ target_link_libraries(simple_pipeline ${GST_LIBRARIES} common)
 add_library(simple_visualize_sink src/simple_visualize_sink.cpp)
 target_link_libraries(simple_visualize_sink ${GST_LIBRARIES} common)
 
-add_library(opencv_dewarp_source src/opencv_dewarp_source.cpp)
-target_link_libraries(opencv_dewarp_source ${GST_LIBRARIES} ${OpenCV_LIBS} common)
+#add_library(opencv_dewarp_source src/opencv_dewarp_source.cpp)
+#target_link_libraries(opencv_dewarp_source ${GST_LIBRARIES} ${OpenCV_LIBS} common)
 
-add_library(ros_image_source src/ros_image_source.cpp)
-target_link_libraries(ros_image_source ${GST_LIBRARIES} ${OpenCV_LIBS} common ${catkin_LIBRARIES})
+add_library(ros_image_source_upper src/ros_image_source.cpp)
+target_link_libraries(ros_image_source_upper ${GST_LIBRARIES} ${OpenCV_LIBS} common ${catkin_LIBRARIES})
+target_compile_definitions(ros_image_source_upper PRIVATE UPPER)
+
+add_library(ros_image_source_lower src/ros_image_source.cpp)
+target_link_libraries(ros_image_source_lower ${GST_LIBRARIES} ${OpenCV_LIBS} common ${catkin_LIBRARIES})
+target_compile_definitions(ros_image_source_lower PRIVATE LOWER)
 
 add_library(memory_mover src/memory_mover.cpp)
 target_link_libraries(simple_visualize_sink ${GST_LIBRARIES} ${DS_LIBRARIES} common)
@@ -175,46 +180,66 @@ target_link_libraries(simple_visualize_sink ${GST_LIBRARIES} ${DS_LIBRARIES} com
 # CFLAGS+= -Wall -std=c++11 -shared -fPIC
 # LIBS+= -lnvinfer -lnvparsers -L/usr/local/cuda-$(CUDA_VER)/lib64 -lcudart -lcublas
 # LFLAGS:= -Wl,--start-group $(LIBS) -Wl,--end-group
-add_library(nvdsinfer_custombboxparser_yolov3_tlt src/nvdsinfer_custombboxparser_yolov3_tlt.cpp)
-target_include_directories(nvdsinfer_custombboxparser_yolov3_tlt PUBLIC /usr/local/cuda-10.2/include)
-set_target_properties(nvdsinfer_custombboxparser_yolov3_tlt PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -std=c++11 -shared -fPIC")
-target_link_directories(nvdsinfer_custombboxparser_yolov3_tlt PUBLIC /usr/local/cuda-10.2/lib64)
-target_link_libraries(nvdsinfer_custombboxparser_yolov3_tlt nvinfer nvparsers cudart cublas)
+#add_library(nvdsinfer_custombboxparser_yolov3_tlt src/nvdsinfer_custombboxparser_yolov3_tlt.cpp)
+#target_include_directories(nvdsinfer_custombboxparser_yolov3_tlt PUBLIC /usr/local/cuda-10.2/include)
+#set_target_properties(nvdsinfer_custombboxparser_yolov3_tlt PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -std=c++11 -shared -fPIC")
+#target_link_directories(nvdsinfer_custombboxparser_yolov3_tlt PUBLIC /usr/local/cuda-10.2/lib64)
+#target_link_libraries(nvdsinfer_custombboxparser_yolov3_tlt nvinfer nvparsers cudart cublas)
 
 # ros_version
-add_library(ros_nvdsinfer_custombboxparser_yolov3_tlt src/nvdsinfer_custombboxparser_yolov3_tlt.cpp)
-target_include_directories(ros_nvdsinfer_custombboxparser_yolov3_tlt PUBLIC /usr/local/cuda-10.2/include)
-set_target_properties(ros_nvdsinfer_custombboxparser_yolov3_tlt PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -std=c++11 -shared -fPIC" COMPILE_DEFINITIONS "_ROS_PIPELINE_")
-target_link_directories(ros_nvdsinfer_custombboxparser_yolov3_tlt PUBLIC /usr/local/cuda-10.2/lib64)
-target_link_libraries(ros_nvdsinfer_custombboxparser_yolov3_tlt nvinfer nvparsers cudart cublas)
+add_library(ros_nvdsinfer_custombboxparser_yolov3_tlt_lower src/nvdsinfer_custombboxparser_yolov3_tlt.cpp)
+target_include_directories(ros_nvdsinfer_custombboxparser_yolov3_tlt_lower PUBLIC /usr/local/cuda-10.2/include)
+set_target_properties(ros_nvdsinfer_custombboxparser_yolov3_tlt_lower PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -std=c++11 -shared -fPIC" COMPILE_DEFINITIONS "_ROS_PIPELINE_")
+target_link_directories(ros_nvdsinfer_custombboxparser_yolov3_tlt_lower PUBLIC /usr/local/cuda-10.2/lib64)
+target_link_libraries(ros_nvdsinfer_custombboxparser_yolov3_tlt_lower nvinfer nvparsers cudart cublas)
+target_compile_definitions(ros_nvdsinfer_custombboxparser_yolov3_tlt_lower PRIVATE LOWER)
 
-add_library(nvinfer_node src/nvinfer_node.cpp)
-target_link_libraries(nvinfer_node ${GST_LIBRARIES} ${DS_LIBRARIES} common)
+add_library(ros_nvdsinfer_custombboxparser_yolov3_tlt_upper src/nvdsinfer_custombboxparser_yolov3_tlt.cpp)
+target_include_directories(ros_nvdsinfer_custombboxparser_yolov3_tlt_upper PUBLIC /usr/local/cuda-10.2/include)
+set_target_properties(ros_nvdsinfer_custombboxparser_yolov3_tlt_upper PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -std=c++11 -shared -fPIC" COMPILE_DEFINITIONS "_ROS_PIPELINE_")
+target_link_directories(ros_nvdsinfer_custombboxparser_yolov3_tlt_upper PUBLIC /usr/local/cuda-10.2/lib64)
+target_link_libraries(ros_nvdsinfer_custombboxparser_yolov3_tlt_upper nvinfer nvparsers cudart cublas)
+target_compile_definitions(ros_nvdsinfer_custombboxparser_yolov3_tlt_upper PRIVATE UPPER)
+
+add_library(nvinfer_node_lower src/nvinfer_node.cpp)
+target_link_libraries(nvinfer_node_lower ${GST_LIBRARIES} ${DS_LIBRARIES} common)
+target_compile_definitions(ros_image_source_lower PRIVATE LOWER)
+
+add_library(nvinfer_node_upper src/nvinfer_node.cpp)
+target_link_libraries(nvinfer_node_upper ${GST_LIBRARIES} ${DS_LIBRARIES} common)
+target_compile_definitions(ros_image_source_upper PRIVATE UPPER)
 
 option(LOWERCAM "LOWER CAMERA OR UPPER CAMERA" ON)
 
-if(LOWERCAM)
-  message("-- Using lower camera parameters")
-  add_compile_definitions(LOWER)
-else()
-  message("-- Using upper camera parameters")
-  add_compile_definitions(UPPER)
-endif()
+#if(LOWERCAM)
+#  message("-- Using lower camera parameters")
+#  add_compile_definitions(LOWER)
+#else()
+#  message("-- Using upper camera parameters")
+#  add_compile_definitions(UPPER)
+#endif()
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 # add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(nvdsinfer_custombboxparser_yolov3_tlt deepstream_vision_generate_messages_cpp)
-add_dependencies(ros_nvdsinfer_custombboxparser_yolov3_tlt deepstream_vision_generate_messages_cpp)
+#add_dependencies(nvdsinfer_custombboxparser_yolov3_tlt deepstream_vision_generate_messages_cpp)
+add_dependencies(ros_nvdsinfer_custombboxparser_yolov3_tlt_lower deepstream_vision_generate_messages_cpp)
+add_dependencies(ros_nvdsinfer_custombboxparser_yolov3_tlt_upper deepstream_vision_generate_messages_cpp)
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/deepstream_vision_node.cpp)
-add_executable(test_basic_pipeline src/test_basic_pipeline.cpp)
-add_executable(test_nvinfer_pipeline src/test_nvinfer_pipeline.cpp)
-add_executable(test_ros_nvinfer_pipeline src/test_ros_nvinfer_pipeline.cpp)
+
+#add_executable(test_basic_pipeline src/test_basic_pipeline.cpp)
+#add_executable(test_nvinfer_pipeline src/test_nvinfer_pipeline.cpp)
+
+add_executable(ros_nvinfer_pipeline_lower src/test_ros_nvinfer_pipeline.cpp)
+target_compile_definitions(ros_nvinfer_pipeline_lower PRIVATE LOWER)
+
+add_executable(ros_nvinfer_pipeline_upper src/test_ros_nvinfer_pipeline.cpp)
+target_compile_definitions(ros_nvinfer_pipeline_upper PRIVATE UPPER)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -231,16 +256,20 @@ add_executable(test_ros_nvinfer_pipeline src/test_ros_nvinfer_pipeline.cpp)
 #   ${catkin_LIBRARIES}
 # )
 
-target_link_libraries(test_basic_pipeline
-  simple_pipeline simple_visualize_sink opencv_dewarp_source memory_mover common
+#target_link_libraries(test_basic_pipeline
+#  simple_pipeline simple_visualize_sink opencv_dewarp_source memory_mover common
+#)
+#
+#target_link_libraries(test_nvinfer_pipeline
+#  simple_pipeline simple_visualize_sink opencv_dewarp_source memory_mover common nvinfer_node
+#)
+
+target_link_libraries(ros_nvinfer_pipeline_lower
+  simple_pipeline simple_visualize_sink ros_image_source_lower memory_mover common nvinfer_node_lower ${catkin_LIBRARIES}
 )
 
-target_link_libraries(test_nvinfer_pipeline
-  simple_pipeline simple_visualize_sink opencv_dewarp_source memory_mover common nvinfer_node
-)
-
-target_link_libraries(test_ros_nvinfer_pipeline
-  simple_pipeline simple_visualize_sink ros_image_source memory_mover common nvinfer_node ${catkin_LIBRARIES}
+target_link_libraries(ros_nvinfer_pipeline_upper
+  simple_pipeline simple_visualize_sink ros_image_source_upper memory_mover common nvinfer_node_upper ${catkin_LIBRARIES}
 )
 
 #############
@@ -297,3 +326,4 @@ target_link_libraries(test_ros_nvinfer_pipeline
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+

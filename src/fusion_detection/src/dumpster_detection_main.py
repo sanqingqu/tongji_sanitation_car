@@ -531,6 +531,15 @@ class DumpsterDetection(object):
 
                 if dumpster_info is None:
                     print("There is no dumpster!")
+                    dumpster_msg = DumpsterInfo()
+                    dumpster_msg.header.stamp = rospy.Time.now()
+                    dumpster_msg.continuous_dumpster = False
+                    dumpster_msg.emergency_stop = False
+                    dumpster_msg.lateral_dis = 0
+                    dumpster_msg.side_offset = 0
+                    dumpster_msg.object_width = 0
+                    dumpster_msg.left_gap = 0
+                    dumpster_msg.right_gap = 0
                 else:
                     if self.debug_mode:
                         print("The Hex representation of 8 bytes info\n:{}".format(dumpster_info))

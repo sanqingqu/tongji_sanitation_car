@@ -27,8 +27,8 @@ int main(int argc, char** argv) {
   RosJPEGImageSource cv_src(pipeline0, enable_dewarp);
   MoveToGPU mtg0(pipeline0, cv_src);
   NvInfer nvinfer(pipeline0, mtg0, argv[1]);
-  FakeSink fakesink(pipeline0, nvinfer);
-  // EGLVisualizeSink eglsink(pipeline0, nvinfer);
+  //FakeSink fakesink(pipeline0, nvinfer);
+  EGLVisualizeSink eglsink(pipeline0, nvinfer);
   // MoveToCPU mtc0(pipeline0, nvinfer);
   // SimpleVisualizeSink simple_sink(pipeline0, cv_src);
   ros::AsyncSpinner spinner(1); // Use 1 threads

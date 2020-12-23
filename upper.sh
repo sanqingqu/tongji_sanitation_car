@@ -20,7 +20,7 @@ source ./scripts/env.sh
 #gnome-terminal -x bash -c "source ./scripts/env.sh;echo "sudo 1" | sudo  -S chmod 666 /dev/ttyUSB0;rosrun can_adapter serial_communication.py;exec bash"
 echo "sudo 1" | sudo  -S chmod 666 /dev/ttyUSB0
 v4l2-ctl -d /dev/video0 -c sharpness=0
-#sleep 20
+sleep 20
 roslaunch ./src/upper.launch
 
 exit 0

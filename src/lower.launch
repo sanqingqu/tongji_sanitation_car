@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Start lidar! -->
+  <include file = "$(find wr_ls_udp)/launch/wr_ls1207de_udp_with_1_lidar.launch" />
+
+  <!-- Start lower camera! -->
+  <node pkg = "undistortion" name = "camera_undistorted_tj_lower" type = "camera_undistorted_tj_lower.py" output = "screen" />
+
+  <!-- Start lower trash bin detection! -->
+  <node pkg = "deepstream_vision" name = "test_ros_nvinfer_pipeline_lower" type = "ros_nvinfer_pipeline_lower" args = "/home/zhgz/tongji_sanitation_car/src/deepstream_vision/config/pgie_yolov3_tlt_low_config.txt" output = "screen" />
+
+  <!-- Start upper part-body detection! -->
+  <node pkg = "deepstream_vision" name = "test_ros_nvinfer_pipeline_upper" type = "ros_nvinfer_pipeline_upper" args = "/home/zhgz/tongji_sanitation_car/src/deepstream_vision/config/pgie_yolov3_tlt_up_config.txt" output = "screen" />
+
+
+</launch>

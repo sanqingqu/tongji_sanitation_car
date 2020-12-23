@@ -117,7 +117,7 @@ bool NvDsInferParseCustomYOLOV3TLT (std::vector<NvDsInferLayerInfo> const &outpu
         bbox.y_top_left = object.top;
         bbox.x_bottom_right = object.left + object.width;
         bbox.y_bottom_right = object.top + object.height;
-        ros_msg.bboxes.push_back(bbox);
+        ros_msg.bboxes.push_back(bbox);fflush(0);
 #endif
     // printf("ok"); fflush(0);
     }

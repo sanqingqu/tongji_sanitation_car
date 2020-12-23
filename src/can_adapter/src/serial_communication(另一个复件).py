@@ -32,8 +32,7 @@ def thread_job():
     rospy.spin()
 
 def callback(data):
-
-    byte_0 = np.uint8((1<<1) if data.continuous_dumpster else 0 + (1<<0) if data.emergency_stop else 0).tobytes()
+    byte_0 = np.uint8((1<<1) if data.continuous_dumpster else 0 + (0<<0) if data.emergency_stop else 0).tobytes()
     byte_1 = np.uint8(clamp(round(data.lateral_dis * 1000 / 6), 0, 255)).tobytes()
     byte_23 = np.float16(data.side_offset ).newbyteorder('<').tobytes()
     byte_45 = np.float16(data.object_width).newbyteorder('<').tobytes()
@@ -41,14 +40,22 @@ def callback(data):
     byte_7 = np.uint8(clamp(round(data.right_gap * 1000 / 6), 0, 255)).tobytes()
     #byte_8 = 
     can_msg = b''.join([byte_0, byte_1, byte_23, byte_45, byte_6, byte_7])
+<<<<<<< HEAD
     ser.write(can_msg)
-
+    for i in can_msg: 
+        print(hex(ord(i)))
     #print('')
     #if ENABLE_SERIAL:
     #    ser.write(can_msg)
         #ser.write('/n')
-
-
+=======
+    for i in can_msg: 
+        print(hex(ord(i)))
+    print('')
+    if ENABLE_SERIAL:
+        ser.write(can_msg)
+        ser.write('/n')
+>>>>>>> 955c776818f8662878834c6b82375d71b3df49fd
 
 def main():
     rospy.init_node('serial_data_control', anonymous=True)
