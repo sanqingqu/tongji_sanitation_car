@@ -1,0 +1,2 @@
+ETLT_FILE=$1
+./tlt-converter -k cWEwdmQ1aTI4a2JmMWdzYjMwMDNlNDdqY2I6YTlhZDMxOWQtNWU0MC00ZDhlLTljNDYtN2RkZjVlNTE5M2Uy -i nchw -d 3,416,416 -t fp16  -e $ETLT_FILE.engine $ETLT_FILE
